@@ -1,12 +1,11 @@
 import emailjs from '@emailjs/browser';
 
-const SERVICE_ID = process.env.NEXT_PUBLIC_EMAILJS_SERVICE_ID;
-const PUBLIC_KEY = process.env.NEXT_PUBLIC_EMAILJS_PUBLIC_KEY;
+const SERVICE_ID = process.env.REACT_APP_MAILJS_SERVICE_ID;
+const PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY;
 
-// Only 2 templates with free plan
 const TEMPLATE_IDS = {
-  formSubmissions: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_FORMS,
-  donationConfirmation: process.env.NEXT_PUBLIC_EMAILJS_TEMPLATE_DONATION,
+  formSubmissions: process.env.REACT_APP_EMAILJS_TEMPLATE_FORMS,
+  donationConfirmation: process.env.REACT_APP_EMAILJS_TEMPLATE_DONATION,
 };
 
 export const sendRegistrationEmail = async (formData) => {

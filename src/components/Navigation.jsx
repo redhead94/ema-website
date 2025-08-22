@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { Menu, X } from 'lucide-react';
+import { Menu, X, LogIn, LogOut } from 'lucide-react';
 
-const Navigation = ({ activeTab, setActiveTab }) => {
+const Navigation = ({ activeTab, setActiveTab, isAuthenticated, onLoginClick, onLogout }) => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   return (
@@ -28,6 +28,37 @@ const Navigation = ({ activeTab, setActiveTab }) => {
                   {item}
                 </button>
               ))}
+              
+              {/* AUTH BUTTONS */}
+              {isAuthenticated ? (
+                <div className="flex items-center space-x-4">
+                  <button
+                    onClick={() => setActiveTab('admin')}
+                    className={`px-3 py-2 text-sm font-medium transition-colors bg-blue-100 rounded ${
+                      activeTab === 'admin'
+                        ? 'text-blue-600 bg-blue-200'
+                        : 'text-blue-700 hover:bg-blue-200'
+                    }`}
+                  >
+                    Dashboard
+                  </button>
+                  <button
+                    onClick={onLogout}
+                    className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors"
+                  >
+                    <LogOut className="w-4 h-4 mr-1" />
+                    Logout
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={onLoginClick}
+                  className="flex items-center px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors bg-gray-100 rounded hover:bg-gray-200"
+                >
+                  <LogIn className="w-4 h-4 mr-1" />
+                   Login
+                </button>
+              )}
             </div>
           </div>
           
@@ -57,6 +88,40 @@ const Navigation = ({ activeTab, setActiveTab }) => {
                 {item}
               </button>
             ))}
+            
+            {/* MOBILE AUTH BUTTONS */}
+            {isAuthenticated ? (
+              <>
+                <button
+                  onClick={() => {
+                    setActiveTab('admin');
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-blue-700 hover:bg-blue-50 bg-blue-50"
+                >
+                  Admin Dashboard
+                </button>
+                <button
+                  onClick={() => {
+                    onLogout();
+                    setIsMenuOpen(false);
+                  }}
+                  className="block w-full text-left px-3 py-2 text-base font-medium text-red-600 hover:bg-red-50"
+                >
+                  Logout
+                </button>
+              </>
+            ) : (
+              <button
+                onClick={() => {
+                  onLoginClick();
+                  setIsMenuOpen(false);
+                }}
+                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-700 hover:bg-gray-100 bg-gray-50"
+              >
+                Login
+              </button>
+            )}
           </div>
         </div>
       )}

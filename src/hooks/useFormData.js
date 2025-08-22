@@ -2,6 +2,9 @@ import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { EMAILJS_CONFIG } from '../config/emailjs-config';
 
+import { saveRegistration, saveVolunteer, saveContact } from '../services/firebaseService';
+import { debugFirebaseConfig } from '../config/firebase';
+
 
 // EmailJS configuration - try env vars first, fallback to config
 const SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || EMAILJS_CONFIG.SERVICE_ID;
@@ -47,7 +50,6 @@ const sendFormEmail = async (formType, formData) => {
         break;
 
       case 'Volunteer Application':
-        case 'Volunteer Application':
           templateParams = {
             ...templateParams,
             name: formData.volunteerName,
@@ -129,6 +131,7 @@ const useFormData = (initialState = {}) => {
   };
 
   const handleSubmit = async (formType) => {
+    debugFirebaseConfig(); // Check Firebase config
     setIsSubmitting(true);
     setSubmitMessage('');
 
@@ -141,6 +144,30 @@ const useFormData = (initialState = {}) => {
         setIsSubmitting(false);
         return { success: false, error: 'Validation failed' };
       }
+
+      // Save to Firebase first
+      let firebaseResult;
+      switch (formType) {
+        case 'Family Registration':
+          firebaseResult = await saveRegistration(formData);
+          break;
+        case 'Volunteer Application':
+          firebaseResult = await saveVolunteer(formData);
+          break;
+        case 'Contact Form':
+          firebaseResult = await saveContact(formData);
+          break;
+        default:
+          firebaseResult = { success: true }; // Skip Firebase for unknown types
+      }
+
+      if (!firebaseResult.success) {
+        console.error('Firebase save failed:', firebaseResult.error);
+        setSubmitMessage(`Error saving data: ${firebaseResult.error}`);
+        setIsSubmitting(false);
+        return { success: false, error: firebaseResult.error };
+      }
+
 
       // Send email
       const emailResult = await sendFormEmail(formType, formData);

@@ -110,14 +110,14 @@ const AdminDashboard = () => {
       {/* Header */}
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">EMA Admin Dashboard</h1>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center h-auto sm:h-16 py-4 sm:py-0">
+            <div className="mb-3 sm:mb-0">
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">EMA Admin Dashboard</h1>
               <p className="text-sm text-gray-600">Manage volunteers and family registrations</p>
             </div>
             <button
               onClick={fetchData}
-              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+              className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm w-full sm:w-auto"
             >
               Refresh Data
             </button>
@@ -126,44 +126,44 @@ const AdminDashboard = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-6 sm:mb-8">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <Users className="w-8 h-8 text-blue-600 mr-3" />
+              <Users className="w-6 sm:w-8 h-6 sm:h-8 text-blue-600 mr-2 sm:mr-3" />
               <div>
-                <p className="text-sm text-gray-600">Total Volunteers</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalVolunteers}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Volunteers</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalVolunteers}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <Heart className="w-8 h-8 text-red-600 mr-3" />
+              <Heart className="w-6 sm:w-8 h-6 sm:h-8 text-red-600 mr-2 sm:mr-3" />
               <div>
-                <p className="text-sm text-gray-600">Families Registered</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalFamilies}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Families Registered</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalFamilies}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <Mail className="w-8 h-8 text-green-600 mr-3" />
+              <Mail className="w-6 sm:w-8 h-6 sm:h-8 text-green-600 mr-2 sm:mr-3" />
               <div>
-                <p className="text-sm text-gray-600">Contact Messages</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalContacts}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Contact Messages</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalContacts}</p>
               </div>
             </div>
           </div>
           
-          <div className="bg-white p-6 rounded-lg shadow-sm border">
+          <div className="bg-white p-4 sm:p-6 rounded-lg shadow-sm border">
             <div className="flex items-center">
-              <DollarSign className="w-8 h-8 text-purple-600 mr-3" />
+              <DollarSign className="w-6 sm:w-8 h-6 sm:h-8 text-purple-600 mr-2 sm:mr-3" />
               <div>
-                <p className="text-sm text-gray-600">Total Donations</p>
-                <p className="text-2xl font-bold text-gray-900">{stats.totalDonations}</p>
+                <p className="text-xs sm:text-sm text-gray-600">Total Donations</p>
+                <p className="text-lg sm:text-2xl font-bold text-gray-900">{stats.totalDonations}</p>
               </div>
             </div>
           </div>
@@ -172,7 +172,7 @@ const AdminDashboard = () => {
         {/* Tabs */}
         <div className="bg-white rounded-lg shadow-sm border">
           <div className="border-b border-gray-200">
-            <nav className="flex space-x-8 px-6">
+            <nav className="flex flex-wrap gap-2 sm:gap-0 sm:space-x-8 px-4 sm:px-6">
               {[
                 { id: 'volunteers', label: 'Volunteers', icon: Users, count: data.volunteers.length },
                 { id: 'registrations', label: 'Family Registrations', icon: Heart, count: data.registrations.length },
@@ -182,15 +182,16 @@ const AdminDashboard = () => {
                 <button
                   key={tab.id}
                   onClick={() => setActiveTab(tab.id)}
-                  className={`flex items-center py-4 px-2 border-b-2 font-medium text-sm ${
+                  className={`flex items-center py-3 sm:py-4 px-2 sm:px-2 border-b-2 font-medium text-xs sm:text-sm w-full sm:w-auto justify-center sm:justify-start ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
                       : 'border-transparent text-gray-500 hover:text-gray-700'
                   }`}
                 >
-                  <tab.icon className="w-4 h-4 mr-2" />
-                  {tab.label}
-                  <span className="ml-2 bg-gray-100 text-gray-600 py-1 px-2 rounded-full text-xs">
+                  <tab.icon className="w-3 sm:w-4 h-3 sm:h-4 mr-1 sm:mr-2" />
+                  <span className="hidden sm:inline">{tab.label}</span>
+                  <span className="sm:hidden">{tab.label.split(' ')[0]}</span>
+                  <span className="ml-1 sm:ml-2 bg-gray-100 text-gray-600 py-1 px-2 rounded-full text-xs">
                     {tab.count}
                   </span>
                 </button>
@@ -199,26 +200,26 @@ const AdminDashboard = () => {
           </div>
 
           {/* Content */}
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
             {activeTab === 'volunteers' && (
               <div className="space-y-4">
-                <h3 className="text-lg font-medium text-gray-900 mb-4">Volunteer Applications</h3>
+                <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-4">Volunteer Applications</h3>
                 {data.volunteers.length === 0 ? (
                   <p className="text-gray-500 text-center py-8">No volunteer applications yet.</p>
                 ) : (
                   data.volunteers.map((volunteer) => (
-                    <div key={volunteer.id} className="border border-gray-200 rounded-lg p-4 hover:bg-gray-50">
-                      <div className="flex justify-between items-start mb-3">
-                        <div>
-                          <h4 className="font-semibold text-gray-900">{volunteer.volunteerName}</h4>
-                          <p className="text-sm text-gray-600">Applied {formatDate(volunteer.createdAt)}</p>
+                    <div key={volunteer.id} className="border border-gray-200 rounded-lg p-3 sm:p-4 hover:bg-gray-50">
+                      <div className="flex flex-col sm:flex-row justify-between items-start mb-3">
+                        <div className="mb-2 sm:mb-0">
+                          <h4 className="font-semibold text-gray-900 text-sm sm:text-base">{volunteer.volunteerName}</h4>
+                          <p className="text-xs sm:text-sm text-gray-600">Applied {formatDate(volunteer.createdAt)}</p>
                         </div>
-                        <div className="flex items-center space-x-2">
+                        <div className="flex flex-col sm:flex-row items-start sm:items-center space-y-2 sm:space-y-0 sm:space-x-2 w-full sm:w-auto">
                           <StatusBadge status={volunteer.status} />
                           <select
                             value={volunteer.status || 'pending'}
                             onChange={(e) => updateStatus('volunteers', volunteer.id, e.target.value)}
-                            className="text-xs border border-gray-300 rounded px-2 py-1"
+                            className="text-xs border border-gray-300 rounded px-2 py-1 w-full sm:w-auto"
                           >
                             <option value="pending">Pending</option>
                             <option value="approved">Approved</option>
@@ -227,32 +228,36 @@ const AdminDashboard = () => {
                         </div>
                       </div>
                       
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 sm:gap-4 text-xs sm:text-sm">
                         <div className="flex items-center text-gray-600">
-                          <Mail className="w-4 h-4 mr-2" />
-                          <a href={`mailto:${volunteer.volunteerEmail}`} className="hover:text-blue-600">
+                          <Mail className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                          <a href={`mailto:${volunteer.volunteerEmail}`} className="hover:text-blue-600 break-all">
                             {volunteer.volunteerEmail}
                           </a>
                         </div>
                         <div className="flex items-center text-gray-600">
-                          <Phone className="w-4 h-4 mr-2" />
+                          <Phone className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
                           <a href={`tel:${volunteer.volunteerPhone}`} className="hover:text-blue-600">
                             {volunteer.volunteerPhone}
                           </a>
                         </div>
-                        <div className="flex items-center text-gray-600">
-                          <Calendar className="w-4 h-4 mr-2" />
-                          {volunteer.availableDays ? volunteer.availableDays.join(', ') : 'No days specified'}
+                        <div className="flex items-center text-gray-600 sm:col-span-2">
+                          <Calendar className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                          <span className="break-words">
+                            {volunteer.availableDays ? volunteer.availableDays.join(', ') : 'No days specified'}
+                          </span>
                         </div>
-                        <div className="flex items-center text-gray-600">
-                          <Clock className="w-4 h-4 mr-2" />
-                          {volunteer.availableTimes ? volunteer.availableTimes.join(', ') : 'No times specified'}
+                        <div className="flex items-center text-gray-600 sm:col-span-2">
+                          <Clock className="w-3 sm:w-4 h-3 sm:h-4 mr-2" />
+                          <span className="break-words">
+                            {volunteer.availableTimes ? volunteer.availableTimes.join(', ') : 'No times specified'}
+                          </span>
                         </div>
                       </div>
                       
                       {volunteer.additionalInfo && (
-                        <div className="mt-3 p-3 bg-gray-50 rounded">
-                          <p className="text-sm text-gray-700">
+                        <div className="mt-3 p-2 sm:p-3 bg-gray-50 rounded">
+                          <p className="text-xs sm:text-sm text-gray-700">
                             <strong>Additional Info:</strong> {volunteer.additionalInfo}
                           </p>
                         </div>

@@ -2,13 +2,20 @@ import { useState } from 'react';
 import emailjs from '@emailjs/browser';
 import { EMAILJS_CONFIG } from '../config/emailjs-config';
 
-// Use direct configuration
-const SERVICE_ID = EMAILJS_CONFIG.SERVICE_ID;
-const PUBLIC_KEY = EMAILJS_CONFIG.PUBLIC_KEY;
+
+// EmailJS configuration - try env vars first, fallback to config
+const SERVICE_ID = process.env.REACT_APP_EMAILJS_SERVICE_ID || EMAILJS_CONFIG.SERVICE_ID;
+const PUBLIC_KEY = process.env.REACT_APP_EMAILJS_PUBLIC_KEY || EMAILJS_CONFIG.PUBLIC_KEY;
 const TEMPLATE_IDS = {
-  forms: EMAILJS_CONFIG.TEMPLATE_FORMS,
-  donation: EMAILJS_CONFIG.TEMPLATE_DONATION,
+  forms: process.env.REACT_APP_EMAILJS_TEMPLATE_FORMS || EMAILJS_CONFIG.TEMPLATE_FORMS,
+  donation: process.env.REACT_APP_EMAILJS_TEMPLATE_DONATION || EMAILJS_CONFIG.TEMPLATE_DONATION,
 };
+
+console.log('Using EmailJS config:', {
+  SERVICE_ID: SERVICE_ID.startsWith('service_') ? 'Set' : 'Missing',
+  PUBLIC_KEY: PUBLIC_KEY ? 'Set' : 'Missing',
+  source: process.env.REACT_APP_EMAILJS_SERVICE_ID ? 'Environment Variables' : 'Config File'
+});
 
 // Email sending functions
 const sendFormEmail = async (formType, formData) => {

@@ -18,7 +18,7 @@ const AboutPage = () => (
       <h2 className="text-2xl font-bold text-gray-800 mt-8 mb-4">Our Services</h2>
       <ul className="space-y-2">
         <li>Meal delivery for new families</li>
-        <li>Home cleaning and organization assistance</li>
+        <li>Volunteer Babysitting</li>
         <li>Emotional support and guidance</li>
         <li>Community connection and resources</li>
       </ul>

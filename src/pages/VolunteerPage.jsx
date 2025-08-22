@@ -6,7 +6,7 @@ const VolunteerPage = () => {
   const { 
     formData, 
     handleInputChange, 
-    handleSubmit, 
+    handleSubmit,
     isSubmitting,
     submitMessage 
   } = useFormData();
@@ -15,6 +15,7 @@ const VolunteerPage = () => {
     <div className="max-w-2xl mx-auto py-12 px-4">
       <div className="text-center mb-8">
         <h1 className="text-3xl font-bold text-gray-800">Volunteer</h1>
+        <p className="text-lg text-gray-600 mt-2">Join our community of helpers</p>
       </div>
       
       {/* Show success/error message */}
@@ -94,13 +95,63 @@ const VolunteerPage = () => {
           </div>
         </div>
 
+        {/* NEW: Available Times Section */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Available Time(s) <span className="text-red-500">*</span>
+          </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {[
+              'Early Morning (6-9 AM)',
+              'Morning (9 AM-12 PM)', 
+              'Afternoon (12-3 PM)',
+              'Late Afternoon (3-6 PM)',
+              'Evening (6-9 PM)',
+              'Night (9 PM-12 AM)'
+            ].map((time) => (
+              <label key={time} className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={(formData.availableTimes || []).includes(time)}
+                  className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2"
+                  onChange={(e) => {
+                    const currentTimes = formData.availableTimes || [];
+                    if (e.target.checked) {
+                      handleInputChange('availableTimes', [...currentTimes, time]);
+                    } else {
+                      handleInputChange('availableTimes', currentTimes.filter(t => t !== time));
+                    }
+                  }}
+                />
+                <span className="ml-2 text-sm text-gray-700">{time}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
+
+
+        {/* NEW: Additional Information */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            Additional Information (Optional)
+          </label>
+          <textarea
+            rows={4}
+            value={formData.additionalInfo || ''}
+            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Tell us about any special skills, experience with children, etc."
+            onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
+          />
+        </div>
+
         <button
           type="button"
           onClick={() => handleSubmit('Volunteer Application')}
           disabled={isSubmitting}
           className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          {isSubmitting ? 'Submitting...' : 'Submit'}
+          {isSubmitting ? 'Submitting...' : 'Submit Application'}
         </button>
       </div>
     </div>

@@ -40,17 +40,22 @@ const sendFormEmail = async (formType, formData) => {
         break;
 
       case 'Volunteer Application':
-        templateParams = {
-          ...templateParams,
-          name: formData.volunteerName,
-          volunteer_name: formData.volunteerName,
-          volunteer_email: formData.volunteerEmail,
-          volunteer_phone: formData.volunteerPhone,
-          available_days: Array.isArray(formData.availableDays) 
-            ? formData.availableDays.join(', ') 
-            : formData.availableDays || 'Not specified',
-        };
-        break;
+        case 'Volunteer Application':
+          templateParams = {
+            ...templateParams,
+            name: formData.volunteerName,
+            volunteer_name: formData.volunteerName,
+            volunteer_email: formData.volunteerEmail,
+            volunteer_phone: formData.volunteerPhone,
+            available_days: Array.isArray(formData.availableDays) 
+              ? formData.availableDays.join(', ') 
+              : formData.availableDays || 'Not specified',
+            available_times: Array.isArray(formData.availableTimes) 
+              ? formData.availableTimes.join(', ') 
+              : formData.availableTimes || 'Not specified',
+            additional_info: formData.additionalInfo || 'None provided',
+          };
+          break;
 
       case 'Contact Form':
         templateParams = {
@@ -202,8 +207,13 @@ const validateForm = (formType, formData) => {
       return formData.motherName && formData.address && formData.numberOfChildren;
     
     case 'Volunteer Application':
-      return formData.volunteerName && formData.volunteerEmail && formData.volunteerPhone;
-    
+      const volValid = formData.volunteerName && 
+                      formData.volunteerEmail && 
+                      formData.volunteerPhone &&
+                      (formData.availableDays && formData.availableDays.length > 0) &&
+                      (formData.availableTimes && formData.availableTimes.length > 0);
+      return volValid;
+      
     case 'Contact Form':
       return formData.name && formData.email && formData.message;
     

@@ -69,6 +69,32 @@ const VolunteerPage = () => {
           />
         </div>
 
+        {/* NEW: Best Way to Contact */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-3">
+            Best Way to Contact You <span className="text-red-500">*</span>
+          </label>
+          <div className="space-y-2">
+            {[
+              { value: 'call', label: 'Phone Call' },
+              { value: 'text', label: 'Text Message' },
+              { value: 'whatsapp', label: 'WhatsApp' }
+            ].map((option) => (
+              <label key={option.value} className="flex items-center">
+                <input
+                  type="radio"
+                  name="contactMethod"
+                  value={option.value}
+                  checked={formData.bestContactMethod === option.value}
+                  className="text-blue-600 focus:ring-blue-500 focus:ring-2"
+                  onChange={(e) => handleInputChange('bestContactMethod', e.target.value)}
+                />
+                <span className="ml-2 text-sm text-gray-700">{option.label}</span>
+              </label>
+            ))}
+          </div>
+        </div>
+
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-3">
             Available Day(s) <span className="text-red-500">*</span>
@@ -140,7 +166,7 @@ const VolunteerPage = () => {
             rows={4}
             value={formData.additionalInfo || ''}
             className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            placeholder="Tell us about any special skills, experience with children, etc."
+            placeholder="Tell us about any special skills, experience with children, dietary restrictions when cooking, etc."
             onChange={(e) => handleInputChange('additionalInfo', e.target.value)}
           />
         </div>

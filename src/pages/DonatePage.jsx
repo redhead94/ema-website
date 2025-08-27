@@ -3,7 +3,6 @@ import { CreditCard } from 'lucide-react';
 import useFormData from '../hooks/useFormData';
 
 const DonatePage = () => {
-  // Destructure all needed values from the hook
   const { 
     formData, 
     handleInputChange,
@@ -12,28 +11,22 @@ const DonatePage = () => {
     submitMessage 
   } = useFormData();
 
-  // For now, this is a placeholder that simulates donation processing
-  // Later this will be replaced with actual Stripe integration
   const handleDonationFlow = async () => {
-    // Validate required fields
     if (!formData.donationAmount || !formData.donorName || !formData.donorEmail) {
       alert('Please fill in all required fields.');
       return;
     }
 
-    // Simulate payment processing (replace with Stripe later)
-    const mockPaymentSuccess = true; // This would come from Stripe
-    const mockTransactionId = `txn_${Date.now()}`; // This would come from Stripe
+    const mockPaymentSuccess = true;
+    const mockTransactionId = `txn_${Date.now()}`;
 
     if (mockPaymentSuccess) {
-      // Send confirmation email
       const donationData = {
         donorName: formData.donorName,
         donorEmail: formData.donorEmail,
         amount: formData.donationAmount,
         transactionId: mockTransactionId
       };
-
       await handleDonationSubmit(donationData);
     } else {
       alert('Payment failed. Please try again.');
@@ -48,7 +41,6 @@ const DonatePage = () => {
       </div>
       
       <div className="bg-white rounded-lg shadow-md p-6">
-        {/* Show success/error message */}
         {submitMessage && (
           <div className={`mb-6 p-4 rounded-md ${
             submitMessage.includes('error') || submitMessage.includes('Please fill')
@@ -71,8 +63,8 @@ const DonatePage = () => {
                   type="button"
                   className={`p-3 border rounded-md transition-colors ${
                     formData.donationAmount === amount
-                      ? 'bg-blue-50 border-blue-300 text-blue-700'
-                      : 'border-gray-300 hover:bg-blue-50 hover:border-blue-300'
+                      ? 'bg-indigo-50 border-indigo-300 text-indigo-700'
+                      : 'border-gray-300 hover:bg-indigo-50 hover:border-indigo-300'
                   }`}
                   onClick={() => handleInputChange('donationAmount', amount)}
                 >
@@ -84,7 +76,7 @@ const DonatePage = () => {
               type="number"
               placeholder="Custom amount"
               value={formData.donationAmount || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               onChange={(e) => handleInputChange('donationAmount', e.target.value)}
             />
           </div>
@@ -97,7 +89,7 @@ const DonatePage = () => {
               type="text"
               required
               value={formData.donorName || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               onChange={(e) => handleInputChange('donorName', e.target.value)}
             />
           </div>
@@ -110,7 +102,7 @@ const DonatePage = () => {
               type="email"
               required
               value={formData.donorEmail || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               onChange={(e) => handleInputChange('donorEmail', e.target.value)}
             />
           </div>
@@ -122,7 +114,7 @@ const DonatePage = () => {
             <input
               type="tel"
               value={formData.donorPhone || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               onChange={(e) => handleInputChange('donorPhone', e.target.value)}
             />
           </div>
@@ -134,7 +126,7 @@ const DonatePage = () => {
             <textarea
               rows={3}
               value={formData.donorMessage || ''}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
               placeholder="Leave a message of support..."
               onChange={(e) => handleInputChange('donorMessage', e.target.value)}
             />
@@ -145,8 +137,8 @@ const DonatePage = () => {
               <CreditCard className="w-5 h-5 text-gray-400 mr-2" />
               <h3 className="text-lg font-medium text-gray-800">Payment Information</h3>
             </div>
-            <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
-              <p className="text-blue-800 text-sm">
+            <div className="bg-indigo-50 border border-indigo-200 rounded-md p-4">
+              <p className="text-indigo-800 text-sm">
                 <strong>Note:</strong> This is currently a demo. When you click "Process Donation" below, 
                 it will simulate a successful payment and send you a confirmation email. Stripe integration 
                 will be added next for real payment processing.
@@ -158,7 +150,7 @@ const DonatePage = () => {
             type="button"
             onClick={handleDonationFlow}
             disabled={isSubmitting}
-            className="w-full bg-blue-600 text-white py-3 px-4 rounded-md hover:bg-blue-700 transition-colors font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full bg-indigo-600 text-white py-3 px-4 rounded-md hover:bg-indigo-700 transition-colors font-medium flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed"
           >
             <CreditCard className="w-5 h-5 mr-2" />
             {isSubmitting ? 'Processing...' : 'Process Donation'}

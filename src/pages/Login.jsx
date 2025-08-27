@@ -61,7 +61,7 @@ export default function Login({ onLoginSuccess }) {
       <div className="w-full max-w-md">
         {/* Header */}
         <div className="text-center mb-4">
-          <div className="mx-auto h-10 w-10 bg-blue-100 rounded-full flex items-center justify-center">
+          <div className="mx-auto h-10 w-10 bg-indigo-100 rounded-full flex items-center justify-center">
             <Lock className="h-5 w-5 text-blue-600" aria-hidden="true" />
           </div>
           <h1 className="mt-3 text-2xl font-bold text-gray-900">Login</h1>
@@ -143,7 +143,7 @@ export default function Login({ onLoginSuccess }) {
               <button
                 type="submit"
                 disabled={isLoading}
-                className="relative w-full flex justify-center py-2.5 px-4 text-sm font-semibold rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                className="relative w-full flex justify-center py-2.5 px-4 text-sm font-semibold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 {isLoading ? (
                   <span className="inline-flex items-center gap-2">

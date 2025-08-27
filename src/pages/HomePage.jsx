@@ -1,13 +1,10 @@
 import React from "react";
 import PropTypes from "prop-types";
-import { Baby,  Users, Utensils,  HeartHandshake, Mail } from "lucide-react";
+import { Baby, Users, Utensils, HeartHandshake, Mail } from "lucide-react";
 
 /**
  * EMA – Meals & Babysitting (No Forms)
- * Single-file React component with semantic markup, accessible buttons, and clean Tailwind styling.
- * - No external UI libs required (just Tailwind + lucide-react icons)
  * - Mobile-first, responsive, and a11y-conscious
- * - Uses your `setActiveTab` handlers for Donate/Contact navigation
  */
 export default function HomePage({ setActiveTab }) {
   const features = [
@@ -27,7 +24,7 @@ export default function HomePage({ setActiveTab }) {
       icon: Baby,
       title: "Family Support",
       desc:
-        "Kind, judgment‑free guidance for new parents navigating the early weeks at home.",
+        "Kind, judgment-free guidance for new parents navigating the early weeks at home.",
     },
   ];
 
@@ -60,44 +57,43 @@ export default function HomePage({ setActiveTab }) {
 
       {/* Header / Hero */}
       <header aria-label="Hero" className="relative">
-  <div
-   className="relative aspect-[16/9] md:aspect-[21/9] flex items-center justify-center overflow-hidden bg-cover bg-center md:bg-fixed bg-no-repeat"
-    style={{
-      backgroundImage:
-        "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.55)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuAZ3kf6baCgliCqcVr7ORktCw05xfzqcXnExL47WmertFSXZu8J5tIbxkMRWfITLXUoXPjvVITr-X4D2-tml1VKoTKAQBCISfjAPK1nVH5Oy9ghBY5mT9JcpLzJ3vPAuO9l-jsRzHv3TWT88--JVHpU1c3wRcbwhsNp5RDnMLEefIjtcP-tyy4145V4uh6WX5msADlLIN4CoH6I0gsHp4LvBsMMDw7yMZvpqlaT-CEuVXDUEPbnFJBsYcCm09TtwxahrsrRMvlbhZue')",
-    }}
-  >
-    <div className="relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 text-white">
-      <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
-        EMA – Essential Mom Assistance
-      </h1>
-      <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-        Supporting new moms —so the
-        transition into parenthood can be smoother and more restful.
-      </p>
-      <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
-        <button
-          onClick={() => setActiveTab("donate")}
-          className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-7 sm:px-8 py-3 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 transition"
+        <div
+          className="relative min-h-[60vh] md:min-h-[70vh] lg:min-h-[86vh] flex items-center justify-center overflow-hidden bg-cover bg-center md:bg-fixed bg-no-repeat"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.55)), url('https://lh3.googleusercontent.com/aida-public/AB6AXuAZ3kf6baCgliCqcVr7ORktCw05xfzqcXnExL47WmertFSXZu8J5tIbxkMRWfITLXUoXPjvVITr-X4D2-tml1VKoTKAQBCISfjAPK1nVH5Oy9ghBY5mT9JcpLzJ3vPAuO9l-jsRzHv3TWT88--JVHpU1c3wRcbwhsNp5RDnMLEefIjtcP-tyy4145V4uh6WX5msADlLIN4CoH6I0gsHp4LvBsMMDw7yMZvpqlaT-CEuVXDUEPbnFJBsYcCm09TtwxahrsrRMvlbhZue')",
+          }}
         >
-          Donate
-        </button>
-        <button
-          onClick={() => setActiveTab("contact")}
-          className="inline-flex items-center justify-center rounded-full bg-white px-7 sm:px-8 py-3 text-base sm:text-lg font-semibold text-slate-900 border border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100 transition"
-        >
-          Contact
-        </button>
-      </div>
-    </div>
-  </div>
-</header>
+          <div className="relative z-10 text-center max-w-4xl mx-auto px-4 sm:px-6 text-white">
+            <h1 className="mt-4 text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight tracking-tight">
+              EMA – Essential Mom Assistance
+            </h1>
+            <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
+              Supporting new moms—so the transition into parenthood can be smoother and more restful.
+            </p>
+            <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
+              <button
+                onClick={() => setActiveTab("donate")}
+                className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-7 sm:px-8 py-3 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 transition"
+              >
+                Donate
+              </button>
+              <button
+                onClick={() => setActiveTab("contact")}
+                className="inline-flex items-center justify-center rounded-full bg-white px-7 sm:px-8 py-3 text-base sm:text-lg font-semibold text-slate-900 border border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100 transition"
+              >
+                Contact
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
 
       <main>
         {/* Programs / Features */}
         <section aria-labelledby="how-we-help" className="py-12 sm:py-16">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center mb-8 sm:mb-12">
+            <div className="max-w-2xl mx-auto text-center mb-8 sm:mb-12">
               <h2 id="how-we-help" className="text-2xl sm:text-3xl font-bold mb-3 sm:mb-4">
                 How We Help
               </h2>
@@ -106,7 +102,7 @@ export default function HomePage({ setActiveTab }) {
               </p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 sm:gap-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 sm:gap-8 justify-items-center">
               {features.map(({ icon: Icon, title, desc }) => (
                 <FeatureCard key={title} Icon={Icon} title={title} desc={desc} />
               ))}
@@ -118,7 +114,8 @@ export default function HomePage({ setActiveTab }) {
         <section className="bg-indigo-700 text-white">
           <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <h3 className="text-2xl font-semibold">Your kindness goes further with EMA</h3>            </div>
+              <h3 className="text-2xl font-semibold">Your kindness goes further with EMA</h3>
+            </div>
             <div className="flex gap-3">
               <button
                 onClick={() => setActiveTab("donate")}
@@ -159,27 +156,7 @@ export default function HomePage({ setActiveTab }) {
             </div>
           </div>
         </section>
-
-        {/* Testimonials 
-        <section className="py-12 sm:py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <h2 className="text-2xl sm:text-3xl font-bold text-center">What People Say</h2>
-            <div className="mt-8 grid md:grid-cols-2 gap-6">
-              {testimonials.map((t, i) => (
-                <blockquote key={i} className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-                  <p className="text-lg italic">“{t.quote}”</p>
-                  <footer className="mt-3 text-sm text-slate-600">— {t.name}, {t.role}</footer>
-                </blockquote>
-              ))}
-            </div>
-          </div>
-        </section>
-        */}
-
-        
       </main>
-
-     
     </div>
   );
 }
@@ -191,7 +168,7 @@ HomePage.propTypes = {
 /** FeatureCard */
 function FeatureCard({ Icon, title, desc }) {
   return (
-    <article className="text-center p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow bg-white">
+    <article className="w-full max-w-sm text-center p-5 sm:p-6 rounded-2xl border border-slate-200 shadow-sm hover:shadow-md transition-shadow bg-white">
       <div className="bg-indigo-100 rounded-full w-14 sm:w-16 h-14 sm:h-16 flex items-center justify-center mx-auto mb-3 sm:mb-4">
         <Icon className="w-7 sm:w-8 h-7 sm:h-8 text-indigo-600" aria-hidden="true" />
       </div>

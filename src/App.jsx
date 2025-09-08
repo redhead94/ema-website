@@ -8,12 +8,52 @@ import DonatePage from './pages/DonatePage';
 import ContactPage from './pages/ContactPage';
 import AboutPage from './pages/AboutPage';
 import AdminDashboard from './pages/AdminDashboard';
+import ThankYouPage from './pages/ThankYouPage';
 import Login from './pages/Login';
+import useFormData from './hooks/useFormData'
+
 
 const App = () => {
-  const [activeTab, setActiveTab] = useState('home');
+    const { handleStripeDonationResult } = useFormData(); 
+     const getInitialTab = () => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        const sessionId = urlParams.get('session_id');
+        
+        if (status === 'success' && sessionId) {
+          return 'thank-you';
+        }
+        return 'home';
+      };
+
+  const [activeTab, setActiveTab] = useState(getInitialTab());
+
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showLogin, setShowLogin] = useState(false);
+
+  // Process donation after component mounts (if needed)
+  useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    const status = urlParams.get('status');
+    const sessionId = urlParams.get('session_id');
+    
+    if (status === 'success' && sessionId) {
+      const processDonation = async () => {
+        try {
+          const response = await fetch(`/api/get-checkout-session?session_id=${encodeURIComponent(sessionId)}`);
+          const sessionData = await response.json();
+          
+          if (response.ok && (sessionData?.status === 'paid' || sessionData?.payment_status === 'paid')) {
+            await handleStripeDonationResult(sessionData);
+          }
+        } catch (error) {
+          console.error('Error processing donation:', error);
+        }
+      };
+      
+      processDonation();
+    }
+  }, [handleStripeDonationResult]);
 
   // Check authentication on mount
   useEffect(() => {
@@ -69,6 +109,8 @@ const App = () => {
         return <AboutPage />;
       case 'login':
         return <Login onLoginSuccess={handleLoginSuccess} />;
+      case 'thank-you':
+        return <ThankYouPage setActiveTab={setActiveTab} />;
       case 'admin':
         return isAuthenticated ? <AdminDashboard /> : <HomePage setActiveTab={setActiveTab} />;
       default:

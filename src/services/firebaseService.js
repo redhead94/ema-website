@@ -55,22 +55,6 @@ export const saveContact = async (formData) => {
   }
 };
 
-// Save donation record to Firestore (for later with Stripe)
-export const saveDonation = async (donationData) => {
-  try {
-    const docRef = await addDoc(collection(db, 'donations'), {
-      ...donationData,
-      createdAt: serverTimestamp(),
-      status: 'completed' // pending, completed, failed, refunded
-    });
-    
-    console.log('Donation saved with ID:', docRef.id);
-    return { success: true, id: docRef.id };
-  } catch (error) {
-    console.error('Error saving donation:', error);
-    return { success: false, error: error.message };
-  }
-};
 
 // Get all registrations (for admin use later)
 export const getRegistrations = async () => {
@@ -101,3 +85,31 @@ export const getVolunteers = async () => {
     return { success: false, error: error.message };
   }
 };
+
+
+export async function saveDonation(donation) {
+  try {
+    // Shape example; tweak collection name/fields as you prefer
+    const doc = {
+      donorName: donation.donorName || 'Anonymous',
+      donorEmail: donation.donorEmail || null,
+      donorPhone: donation.donorPhone || null,
+      donorMessage: donation.donorMessage || '',
+      amountCents: donation.amountCents,
+      currency: donation.currency || 'usd',
+      amountDisplay: donation.amountDisplay,      // "$25.00"
+      sessionId: donation.sessionId,
+      paymentIntentId: donation.paymentIntentId,
+      chargeId: donation.chargeId,
+      receiptUrl: donation.receiptUrl || null,
+      createdAt: new Date().toISOString(),
+      status: donation.status || 'paid',
+    };
+    // e.g., 'donations' collection
+    const ref = await addDoc(collection(db, 'donations'), doc);
+    return { success: true, id: ref.id };
+  } catch (error) {
+    console.error('saveDonation error:', error);
+    return { success: false, error: error.message };
+  }
+}

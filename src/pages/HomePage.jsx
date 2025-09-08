@@ -69,7 +69,7 @@ export default function HomePage({ setActiveTab }) {
               EMA – Essential Mom Assistance
             </h1>
             <p className="mt-4 sm:mt-6 text-base sm:text-lg md:text-xl max-w-3xl mx-auto leading-relaxed">
-              Supporting new moms—so the transition into parenthood can be smoother and more restful.
+              Supporting new moms- so the transition into parenthood can be smoother and more restful.
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button
@@ -140,7 +140,7 @@ export default function HomePage({ setActiveTab }) {
             <div className="mt-8 grid md:grid-cols-3 gap-6">
               <Step
                 title="Reach out"
-                desc="Tell us what you need — meals, babysitting, or both. We’ll confirm details and timing."
+                desc="Tell us what you need - meals, babysitting, or both. We’ll confirm details and timing."
                 Icon={Mail}
               />
               <Step
@@ -150,7 +150,7 @@ export default function HomePage({ setActiveTab }) {
               />
               <Step
                 title="Care arrives"
-                desc="Receive a warm meal and reliable childcare support — with dignity, respect, and care."
+                desc="Receive a warm meal and reliable childcare support - with dignity, respect, and care."
                 Icon={HeartHandshake}
               />
             </div>
@@ -202,7 +202,7 @@ Step.propTypes = {
   desc: PropTypes.string.isRequired,
 };
 
-/** BackgroundPattern — decorative SVG blobs & grid */
+/** BackgroundPattern - decorative SVG blobs & grid */
 function BackgroundPattern() {
   return (
     <div aria-hidden="true" className="pointer-events-none absolute inset-0 -z-10">

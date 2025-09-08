@@ -402,7 +402,7 @@ const AdminDashboard = () => {
                         </div>
                         <div className="flex items-center space-x-2">
                           <StatusBadge status={donation.status} />
-                          <span className="text-lg font-bold text-green-600">${donation.amount}</span>
+                          <span className="text-lg font-bold text-green-600">{donation.amountDisplay}</span>
                         </div>
                       </div>
                       

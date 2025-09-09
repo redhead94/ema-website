@@ -230,7 +230,7 @@ export const deleteReceiptFromFirebase = async (transactionId) => {
 // Organization info - update with your details
 const ORGANIZATION_INFO = {
   name: 'Essential Mom Assistance',
-  address: '1114 Kersey Road, Silver Spring MD, 20902',
+  address: 'Silver Spring MD, 20902',
   phone: '(845) 671-0355',
   email: 'info@essentialmom.net',
   website: 'https://essentialmom.net',

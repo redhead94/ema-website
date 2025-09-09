@@ -2,19 +2,11 @@
 // Firebase Storage receipt hosting and EmailJS integration
 
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from 'firebase/storage';
-import { generateTaxReceiptPDF } from './professionalReceipts';
 import emailjs from '@emailjs/browser';
+import jsPDF from 'jspdf';
 
 // Initialize Firebase Storage
 const storage = getStorage();
-
-// Organization info - update with your actual details
-const ORGANIZATION_INFO = {
-  name: 'Essential Mom Assistance',
-  email: 'info@essentialmom.net',
-  phone: '(845) 671-0355',
-  ein: '39-3893195' // Replace with your actual EIN
-};
 
 // EmailJS configuration
 const EMAILJS_CONFIG = {
@@ -233,4 +225,125 @@ export const deleteReceiptFromFirebase = async (transactionId) => {
     console.error('Error deleting receipt:', error);
     return { success: false, error: error.message };
   }
+};
+
+// Organization info - update with your details
+const ORGANIZATION_INFO = {
+  name: 'Essential Mom Assistance',
+  address: '1114 Kersey Road, Silver Spring MD, 20902',
+  phone: '(845) 671-0355',
+  email: 'info@essentialmom.net',
+  website: 'https://essentialmom.net',
+  ein: '39-3893195', // Your actual EIN
+  taxExemptStatus: '501(c)(3)',
+};
+
+// Generate professional PDF receipt
+export const generateTaxReceiptPDF = (donationData) => {
+  const pdf = new jsPDF();
+  const pageWidth = pdf.internal.pageSize.width;
+  
+  // Header with organization branding
+  pdf.setFillColor(59, 130, 246); // Blue header
+  pdf.rect(0, 0, pageWidth, 30, 'F');
+  
+  pdf.setTextColor(255, 255, 255);
+  pdf.setFontSize(18);
+  pdf.setFont(undefined, 'bold');
+  pdf.text(ORGANIZATION_INFO.name, 20, 20);
+  
+  pdf.setTextColor(0, 0, 0);
+  pdf.setFontSize(16);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('TAX-DEDUCTIBLE DONATION RECEIPT', 20, 45);
+  
+  // Organization details
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'normal');
+  pdf.text(ORGANIZATION_INFO.address, 20, 55);
+  pdf.text(`${ORGANIZATION_INFO.phone} | ${ORGANIZATION_INFO.email}`, 20, 62);
+  pdf.text(ORGANIZATION_INFO.website, 20, 69);
+  
+  // Receipt details in a box
+  pdf.setDrawColor(200);
+  pdf.setLineWidth(0.5);
+  pdf.rect(20, 80, pageWidth - 40, 70); // Made box taller
+  
+  // Receipt header
+  pdf.setFillColor(248, 250, 252);
+  pdf.rect(20, 80, pageWidth - 40, 15, 'F');
+  
+  pdf.setFontSize(12);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('DONATION DETAILS', 25, 90);
+  
+  // Receipt content with better spacing
+  pdf.setFont(undefined, 'normal');
+  pdf.setFontSize(11);
+  
+  const details = [
+    ['Date of Donation:', new Date(donationData.donationDate || Date.now()).toLocaleDateString('en-US', { 
+      year: 'numeric', 
+      month: 'long', 
+      day: 'numeric' 
+    })],
+    ['Donor Name:', donationData.donorName],
+    ['Donation Amount:', `$${(donationData.amountCents / 100).toFixed(2)}`],
+    ['Payment Method:', donationData.paymentMethod || 'Credit Card'],
+  ];
+  
+  details.forEach(([label, value], index) => {
+    const y = 105 + (index * 8);
+    pdf.setFont(undefined, 'bold');
+    pdf.text(label, 25, y);
+    pdf.setFont(undefined, 'normal');
+    pdf.text(value, 90, y);
+  });
+  
+  // Tax deductible information - FIXED POSITIONING
+  pdf.setFontSize(12);
+  pdf.setFont(undefined, 'bold');
+  pdf.text('TAX DEDUCTION INFORMATION', 20, 170); // Moved down from 180
+  
+  pdf.setFontSize(10);
+  pdf.setFont(undefined, 'normal');
+  
+  const taxInfo = [
+    `This organization is recognized as tax-exempt under Section ${ORGANIZATION_INFO.taxExemptStatus}`,
+    'of the Internal Revenue Code.',
+    `Federal Tax ID (EIN): ${ORGANIZATION_INFO.ein}`,
+    '',
+    'No goods or services were provided in exchange for this donation.',
+    'The entire amount is tax-deductible to the fullest extent allowed by law.',
+    'Please retain this receipt for your tax records.',
+  ];
+  
+  let currentY = 180; // Start position for tax info
+  taxInfo.forEach((info) => {
+    if (info) {
+      pdf.text(info, 20, currentY);
+      currentY += 7; // Consistent spacing
+    } else {
+      currentY += 3; // Smaller space for blank lines
+    }
+  });
+  
+  // Thank you message - positioned after tax info
+  const thankYouY = currentY + 10;
+  pdf.setFillColor(248, 250, 252);
+  pdf.rect(20, thankYouY, pageWidth - 40, 25, 'F');
+  
+  pdf.setFontSize(11);
+  pdf.setFont(undefined, 'italic');
+  pdf.text('Thank you for your generous support of Essential Mom Assistance.', 25, thankYouY + 10);
+  pdf.text('Your donation helps us provide crucial support to new families.', 25, thankYouY + 18);
+  
+  // Footer - positioned at bottom
+  const footerY = thankYouY + 35;
+  pdf.setFontSize(8);
+  pdf.setTextColor(128);
+  pdf.text('This receipt was generated electronically and is valid without a signature.', 20, footerY);
+  pdf.text(`Generated: ${new Date().toLocaleString()}`, 20, footerY + 7);
+  
+  return pdf;
 };

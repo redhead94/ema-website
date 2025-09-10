@@ -43,8 +43,8 @@ const AdminDashboard = () => {
         totalFamilies: results.registrations.length,
         totalContacts: results.contacts.length,
         totalDonations: results.donations.reduce((total, donation) => {
-          return total + donation.amount;
-        }, 0),
+  return total + (donation.amountCents / 100);
+}, 0).toFixed(2), 
         pendingVolunteers: results.volunteers.filter(v => v.status === 'pending').length
       });
 

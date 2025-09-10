@@ -163,7 +163,7 @@ const App = () => {
       <main className="pb-8">
         {renderContent()}
       </main>
-      <Footer />
+      <Footer setActiveTab={setActiveTab} />
     </div>
   );
 };

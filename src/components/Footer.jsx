@@ -33,7 +33,7 @@ const Footer = ({ setActiveTab }) => (
         </ul>
       </div>
     </div>
-    <div className="text-center text-xs text-slate-500 py-6">© {new Date().getFullYear()} EMA. All rights reserved.</div>
+    <div className="text-center text-xs text-slate-500 py-6">© 2025 EMA. All rights reserved.</div>
   </footer>
 );
 

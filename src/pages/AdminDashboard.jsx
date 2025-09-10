@@ -42,7 +42,9 @@ const AdminDashboard = () => {
         totalVolunteers: results.volunteers.length,
         totalFamilies: results.registrations.length,
         totalContacts: results.contacts.length,
-        totalDonations: results.donations.length,
+        totalDonations: results.donations.reduce((total, donation) => {
+          return total + donation.amount;
+        }, 0),
         pendingVolunteers: results.volunteers.filter(v => v.status === 'pending').length
       });
 

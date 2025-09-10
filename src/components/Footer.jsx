@@ -28,7 +28,7 @@ const Footer = ({ setActiveTab }) => (
         <p className="font-semibold mb-2">Contact</p>
         <ul className="space-y-2 text-slate-600">
           <li className="flex items-center gap-2"><Mail className="h-4 w-4" aria-hidden="true"/> info@essentialmom.net </li>
-          <li className="flex items-center gap-2"><Phone className="h-4 w-4" aria-hidden="true"/> (123) 456-7890 </li>
+          <li className="flex items-center gap-2"><Phone className="h-4 w-4" aria-hidden="true"/> (443) 681-9518 </li>
 
         </ul>
       </div>

@@ -1,5 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, Phone, Clock, User, AlertCircle } from 'lucide-react';
+import { MessageCircle, Send, Phone, Clock, User, AlertCircle, RefreshCw } from 'lucide-react';
+import { initializeApp } from 'firebase/app';
+import { 
+  getFirestore, 
+  collection, 
+  query, 
+  orderBy, 
+  onSnapshot, 
+  where,
+  addDoc,
+  serverTimestamp,
+  doc,
+  updateDoc
+} from 'firebase/firestore';
+
+// Firebase configuration - same as your other components
+const firebaseConfig = {
+  apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
+  authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
+  projectId: process.env.REACT_APP_FIREBASE_PROJECT_ID,
+  storageBucket: process.env.REACT_APP_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: process.env.REACT_APP_FIREBASE_MESSAGING_SENDER_ID,
+  appId: process.env.REACT_APP_FIREBASE_APP_ID
+};
+
+// Initialize Firebase
+let app;
+let db;
+
+try {
+  app = initializeApp(firebaseConfig);
+  db = getFirestore(app);
+} catch (error) {
+  console.error('Firebase initialization error:', error);
+}
 
 const SMSDashboard = () => {
   const [conversations, setConversations] = useState([]);
@@ -8,55 +42,105 @@ const SMSDashboard = () => {
   const [newMessage, setNewMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
+  const [firebaseReady, setFirebaseReady] = useState(false);
 
-  // Load conversations on component mount
+  // Check Firebase initialization
   useEffect(() => {
-    loadConversations();
+    if (db) {
+      setFirebaseReady(true);
+    }
   }, []);
 
-  // Load messages when conversation is selected
+  // Real-time listener for conversations
   useEffect(() => {
-    if (selectedConversation) {
-      loadMessages(selectedConversation.phone_number);
-    }
-  }, [selectedConversation]);
+    if (!db) return;
 
-  const loadConversations = async () => {
     setLoading(true);
-    try {
-      const response = await fetch('/api/get-sms-conversations');
-      const data = await response.json();
-      if (data.success) {
-        setConversations(data.conversations);
-      }
-    } catch (error) {
-      console.error('Error loading conversations:', error);
-    }
-    setLoading(false);
-  };
+    
+    const q = query(
+      collection(db, 'sms_conversations'), 
+      orderBy('lastMessageAt', 'desc')
+    );
 
-  const loadMessages = async (phoneNumber) => {
-    try {
-      const response = await fetch(`/api/get-conversation-messages?phone_number=${encodeURIComponent(phoneNumber)}`);
-      const data = await response.json();
-      if (data.success) {
-        setMessages(data.messages);
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const conversationList = [];
+      snapshot.forEach((doc) => {
+        conversationList.push({
+          id: doc.id,
+          ...doc.data()
+        });
+      });
+      
+      console.log('Loaded conversations from Firebase:', conversationList);
+      setConversations(conversationList);
+      setLoading(false);
+    }, (error) => {
+      console.error('Error listening to conversations:', error);
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, [firebaseReady]);
+
+  // Real-time listener for messages when conversation is selected
+  useEffect(() => {
+    if (!db || !selectedConversation) return;
+
+    const q = query(
+      collection(db, 'sms_messages'),
+      where('phoneNumber', '==', selectedConversation.phoneNumber),
+      orderBy('sentAt', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const messageList = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        messageList.push({
+          id: doc.id,
+          ...data,
+          sentAt: data.sentAt?.toDate?.()?.toISOString() || new Date().toISOString()
+        });
+      });
+      
+      console.log('Loaded messages from Firebase:', messageList);
+      setMessages(messageList);
+      
+      // Mark conversation as read
+      if (messageList.length > 0) {
+        markConversationAsRead(selectedConversation.phoneNumber);
       }
+    }, (error) => {
+      console.error('Error listening to messages:', error);
+    });
+
+    return () => unsubscribe();
+  }, [selectedConversation, firebaseReady]);
+
+  const markConversationAsRead = async (phoneNumber) => {
+    if (!db) return;
+    
+    try {
+      const conversationRef = doc(db, 'sms_conversations', phoneNumber);
+      await updateDoc(conversationRef, {
+        unreadCount: 0
+      });
     } catch (error) {
-      console.error('Error loading messages:', error);
+      console.error('Error marking conversation as read:', error);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation) return;
+    if (!newMessage.trim() || !selectedConversation || !db) return;
 
     setSendingMessage(true);
     try {
+      // Send via Twilio API
       const response = await fetch('/api/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          to: selectedConversation.phone_number,
+          to: selectedConversation.phoneNumber,
           message: newMessage,
           sentBy: 'Admin' // You can make this dynamic based on logged-in user
         })
@@ -64,19 +148,25 @@ const SMSDashboard = () => {
 
       const data = await response.json();
       if (data.success) {
-        // Add the sent message to the messages list
-        const sentMessage = {
-          id: Date.now(),
-          message_body: newMessage,
+        // Save to Firebase
+        await addDoc(collection(db, 'sms_messages'), {
+          phoneNumber: selectedConversation.phoneNumber,
+          body: newMessage,
           direction: 'outbound',
-          sent_at: new Date().toISOString(),
-          sent_by_user: 'Admin'
-        };
-        setMessages(prev => [...prev, sentMessage]);
+          sentAt: serverTimestamp(),
+          sentBy: 'Admin',
+          twilioSid: data.messageSid
+        });
+
+        // Update conversation
+        const conversationRef = doc(db, 'sms_conversations', selectedConversation.phoneNumber);
+        await updateDoc(conversationRef, {
+          lastMessage: newMessage,
+          lastMessageAt: serverTimestamp(),
+          status: 'active'
+        });
+
         setNewMessage('');
-        
-        // Refresh conversations to update last message
-        loadConversations();
       } else {
         alert('Failed to send message: ' + data.error);
       }
@@ -88,7 +178,7 @@ const SMSDashboard = () => {
   };
 
   const formatPhoneNumber = (phone) => {
-    // Format +15551234567 to (555) 123-4567
+    if (!phone) return '';
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length === 11 && cleaned.startsWith('1')) {
       const number = cleaned.slice(1);
@@ -98,7 +188,9 @@ const SMSDashboard = () => {
   };
 
   const formatTime = (timestamp) => {
-    return new Date(timestamp).toLocaleString('en-US', {
+    if (!timestamp) return '';
+    const date = new Date(timestamp);
+    return date.toLocaleString('en-US', {
       month: 'short',
       day: 'numeric',
       hour: 'numeric',
@@ -107,6 +199,21 @@ const SMSDashboard = () => {
     });
   };
 
+  if (!firebaseReady) {
+    return (
+      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+        <div className="p-6">
+          <div className="flex items-center justify-center">
+            <div className="flex items-center space-x-2 text-gray-500">
+              <RefreshCw className="h-5 w-5 animate-spin" />
+              <span>Connecting to Firebase...</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="bg-white rounded-lg shadow-lg overflow-hidden">
       <div className="bg-gray-50 px-6 py-4 border-b">
@@ -114,13 +221,16 @@ const SMSDashboard = () => {
           <div className="flex items-center space-x-2">
             <MessageCircle className="h-6 w-6 text-blue-600" />
             <h2 className="text-xl font-semibold text-gray-900">SMS Management</h2>
+            <span className="text-sm text-gray-500">
+              ({conversations.length} conversations)
+            </span>
           </div>
-          <button
-            onClick={loadConversations}
-            className="px-4 py-2 bg-blue-600 text-white text-sm rounded-lg hover:bg-blue-700 transition-colors"
-          >
-            Refresh
-          </button>
+          <div className="flex items-center space-x-2">
+            <div className="flex items-center text-sm text-green-600">
+              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+              Live Updates
+            </div>
+          </div>
         </div>
       </div>
 
@@ -132,7 +242,11 @@ const SMSDashboard = () => {
             {loading ? (
               <div className="text-center py-4 text-gray-500">Loading...</div>
             ) : conversations.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">No conversations yet</div>
+              <div className="text-center py-4 text-gray-500">
+                <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                <p>No conversations yet</p>
+                <p className="text-xs mt-1">Send a text to your Twilio number to get started</p>
+              </div>
             ) : (
               <div className="space-y-2">
                 {conversations.map((conversation) => (
@@ -149,21 +263,21 @@ const SMSDashboard = () => {
                       <div className="flex items-center space-x-2">
                         <Phone className="h-4 w-4 text-gray-400" />
                         <span className="text-sm font-medium text-gray-900">
-                          {conversation.contact_name || formatPhoneNumber(conversation.phone_number)}
+                          {conversation.contactName || formatPhoneNumber(conversation.phoneNumber)}
                         </span>
                       </div>
-                      {conversation.unread_count > 0 && (
+                      {conversation.unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                          {conversation.unread_count}
+                          {conversation.unreadCount}
                         </span>
                       )}
                     </div>
                     <p className="text-xs text-gray-500 truncate">
-                      {conversation.last_message}
+                      {conversation.lastMessage}
                     </p>
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-xs text-gray-400">
-                        {formatTime(conversation.last_message_at)}
+                        {formatTime(conversation.lastMessageAt?.toDate?.())}
                       </span>
                       <span className={`text-xs px-2 py-1 rounded ${
                         conversation.status === 'active' ? 'bg-green-100 text-green-800' :
@@ -190,10 +304,10 @@ const SMSDashboard = () => {
                   <User className="h-5 w-5 text-gray-400" />
                   <div>
                     <h3 className="font-medium text-gray-900">
-                      {selectedConversation.contact_name || 'Unknown Contact'}
+                      {selectedConversation.contactName || 'Unknown Contact'}
                     </h3>
                     <p className="text-sm text-gray-500">
-                      {formatPhoneNumber(selectedConversation.phone_number)}
+                      {formatPhoneNumber(selectedConversation.phoneNumber)}
                     </p>
                   </div>
                 </div>
@@ -213,15 +327,15 @@ const SMSDashboard = () => {
                           : 'bg-gray-200 text-gray-900'
                       }`}
                     >
-                      <p className="text-sm">{message.message_body}</p>
+                      <p className="text-sm">{message.body}</p>
                       <div className={`flex items-center space-x-1 mt-1 ${
                         message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'
                       }`}>
                         <Clock className="h-3 w-3" />
                         <span className="text-xs">
-                          {formatTime(message.sent_at)}
-                          {message.direction === 'outbound' && message.sent_by_user && (
-                            ` • ${message.sent_by_user}`
+                          {formatTime(message.sentAt)}
+                          {message.direction === 'outbound' && message.sentBy && (
+                            ` • ${message.sentBy}`
                           )}
                         </span>
                       </div>
@@ -247,7 +361,11 @@ const SMSDashboard = () => {
                     disabled={!newMessage.trim() || sendingMessage}
                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
-                    <Send className="h-4 w-4" />
+                    {sendingMessage ? (
+                      <RefreshCw className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Send className="h-4 w-4" />
+                    )}
                   </button>
                 </div>
               </div>
@@ -262,7 +380,6 @@ const SMSDashboard = () => {
           )}
         </div>
       </div>
-
     </div>
   );
 };

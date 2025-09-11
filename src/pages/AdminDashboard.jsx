@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { collection, getDocs, orderBy, query, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { Users, Heart, Mail, DollarSign, Calendar, Phone, MapPin, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Users, Heart, Mail, DollarSign, Calendar, Phone, MapPin, Clock} from 'lucide-react';
+import SMSDashboard from '../components/SMSDashboard';
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState('volunteers');
@@ -126,6 +127,10 @@ const AdminDashboard = () => {
           </div>
         </div>
       </div>
+
+      <section className="mb-8">
+        <SMSDashboard />
+      </section>
 
       {/* Stats Cards */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8">

@@ -1,6 +1,4 @@
-
 export default async function handler(req, res) {
-  // Enable CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
@@ -22,23 +20,20 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Phone number is required' });
     }
 
-    // TODO: Replace with actual database query
-    // const messages = await getMessagesForConversation(phone_number);
-
     // Mock data for now
     const mockMessages = [
       {
         id: 1,
         message_body: 'Hi, I just had a baby and need some help with meals',
         direction: 'inbound',
-        sent_at: new Date(Date.now() - 7200000).toISOString(), // 2 hours ago
+        sent_at: new Date(Date.now() - 7200000).toISOString(),
         sent_by_user: null
       },
       {
         id: 2,
         message_body: 'Congratulations! We\'d love to help. I\'ll have someone reach out to set up a meal train.',
         direction: 'outbound',
-        sent_at: new Date(Date.now() - 3600000).toISOString(), // 1 hour ago
+        sent_at: new Date(Date.now() - 3600000).toISOString(),
         sent_by_user: 'Admin'
       }
     ];

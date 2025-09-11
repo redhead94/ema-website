@@ -1,51 +1,34 @@
 const twilio = require('twilio');
 
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
+  console.log('Webhook called with method:', req.method);
+  console.log('Content-Type:', req.headers['content-type']);
+  console.log('Raw body:', req.body);
 
   if (req.method !== 'POST') {
-    res.status(405).json({ error: 'Method not allowed' });
-    return;
+    console.log('Invalid method, returning 405');
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   try {
-    const { to, message, sentBy } = req.body;
+    // Twilio sends form-encoded data, not JSON
+    const { From, Body, MessageSid, To } = req.body;
 
-    if (!to || !message) {
-      return res.status(400).json({ error: 'Phone number and message are required' });
-    }
-
-    const client = twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
-
-    const twilioMessage = await client.messages.create({
-      body: message,
-      from: process.env.TWILIO_PHONE_NUMBER,
-      to: to
+    console.log('Parsed SMS data:', {
+      from: From,
+      to: To,
+      body: Body,
+      sid: MessageSid
     });
 
-    console.log('SMS sent successfully:', twilioMessage.sid);
-
-    res.status(200).json({
-      success: true,
-      messageSid: twilioMessage.sid,
-      message: 'SMS sent successfully'
-    });
+    // Respond with TwiML
+    res.setHeader('Content-Type', 'text/xml');
+    res.status(200).send(`<?xml version="1.0" encoding="UTF-8"?>
+      <Response>
+      </Response>`);
 
   } catch (error) {
-    console.error('Error sending SMS:', error);
-    res.status(500).json({ 
-      success: false, 
-      error: error.message || 'Failed to send SMS' 
-    });
+    console.error('Error processing webhook:', error);
+    res.status(500).send('Error');
   }
 }

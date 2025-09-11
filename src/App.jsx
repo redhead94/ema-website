@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
 import HomePage from './pages/HomePage';
@@ -10,32 +11,17 @@ import AboutPage from './pages/AboutPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ThankYouPage from './pages/ThankYouPage';
 import Login from './pages/Login';
-import useFormData from './hooks/useFormData'
+import useFormData from './hooks/useFormData';
 
+// Component to handle Stripe redirect processing
+const StripeHandler = () => {
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { handleStripeDonationResult } = useFormData();
 
-const App = () => {
-    const { handleStripeDonationResult } = useFormData(); 
-     const getInitialTab = () => {
-        const urlParams = new URLSearchParams(window.location.search);
-        const status = urlParams.get('status');
-        const sessionId = urlParams.get('session_id');
-        
-        if (status === 'success' && sessionId) {
-          return 'thank-you';
-        }
-        return 'home';
-      };
-
-  const [activeTab, setActiveTab] = useState(getInitialTab());
-
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [showLogin, setShowLogin] = useState(false);
-
-  // Process donation after component mounts (if needed)
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const status = urlParams.get('status');
-    const sessionId = urlParams.get('session_id');
+    const status = searchParams.get('status');
+    const sessionId = searchParams.get('session_id');
     
     if (status === 'success' && sessionId) {
       const processDonation = async () => {
@@ -45,15 +31,65 @@ const App = () => {
           
           if (response.ok && (sessionData?.status === 'paid' || sessionData?.payment_status === 'paid')) {
             await handleStripeDonationResult(sessionData);
+            navigate('/thank-you');
           }
         } catch (error) {
           console.error('Error processing donation:', error);
+          navigate('/');
         }
       };
       
       processDonation();
+    } else {
+      navigate('/');
     }
-  }, [handleStripeDonationResult]);
+  }, [searchParams, navigate, handleStripeDonationResult]);
+
+  return <div>Processing...</div>;
+};
+
+// Protected route component for admin
+const ProtectedRoute = ({ children, isAuthenticated }) => {
+  return isAuthenticated ? children : <Navigate to="/login" replace />;
+};
+
+// Admin layout component
+const AdminLayout = ({ children, onLogout, onBackToSite }) => {
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="bg-white shadow-sm border-b">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between items-center h-16">
+            <div className="flex-shrink-0">
+              <h1 className="text-2xl font-bold text-gray-800">EMA Admin</h1>
+              <p className="text-sm text-gray-600">Essential Mom Assistance</p>
+            </div>
+            <div className="flex items-center space-x-4">
+              <button
+                onClick={onBackToSite}
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
+              >
+                Back to Site
+              </button>
+              <button
+                onClick={onLogout}
+                className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors bg-gray-100 rounded hover:bg-gray-200"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+      {children}
+    </div>
+  );
+};
+
+// Main app content component
+const AppContent = () => {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const navigate = useNavigate();
 
   // Check authentication on mount
   useEffect(() => {
@@ -76,8 +112,7 @@ const App = () => {
   // Handle successful login
   const handleLoginSuccess = () => {
     setIsAuthenticated(true);
-    setShowLogin(false);
-    setActiveTab('admin');
+    navigate('/admin');
   };
 
   // Handle logout
@@ -85,86 +120,60 @@ const App = () => {
     setIsAuthenticated(false);
     localStorage.removeItem('ema_admin_authenticated');
     localStorage.removeItem('ema_admin_login_time');
-    setActiveTab('home');
+    navigate('/');
   };
 
-  // Handle login button click - navigate to login page
-  const handleLoginClick = () => {
-    setActiveTab('login');
+  // Handle back to site from admin
+  const handleBackToSite = () => {
+    navigate('/');
   };
-
-  const renderContent = () => {
-    switch (activeTab) {
-      case 'home':
-        return <HomePage setActiveTab={setActiveTab} />;
-      case 'register':
-        return <RegisterPage />;
-      case 'volunteer':
-        return <VolunteerPage />;
-      case 'donate':
-        return <DonatePage />;
-      case 'contact':
-        return <ContactPage />;
-      case 'about':
-        return <AboutPage />;
-      case 'login':
-        return <Login onLoginSuccess={handleLoginSuccess} />;
-      case 'thank-you':
-        return <ThankYouPage setActiveTab={setActiveTab} />;
-      case 'admin':
-        return isAuthenticated ? <AdminDashboard /> : <HomePage setActiveTab={setActiveTab} />;
-      default:
-        return <HomePage setActiveTab={setActiveTab} />;
-    }
-  };
-
-  // Don't show Navigation and Footer for admin dashboard
-  if (activeTab === 'admin' && isAuthenticated) {
-    return (
-      <div className="min-h-screen bg-gray-50">
-        <div className="bg-white shadow-sm border-b">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="flex justify-between items-center h-16">
-              <div className="flex-shrink-0">
-                <h1 className="text-2xl font-bold text-gray-800">EMA Admin</h1>
-                <p className="text-sm text-gray-600">Essential Mom Assistance</p>
-              </div>
-              <div className="flex items-center space-x-4">
-                <button
-                  onClick={() => setActiveTab('home')}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors"
-                >
-                  Back to Site
-                </button>
-                <button
-                  onClick={handleLogout}
-                  className="px-3 py-2 text-sm font-medium text-gray-700 hover:text-red-600 transition-colors bg-gray-100 rounded hover:bg-gray-200"
-                >
-                  Logout
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-        <AdminDashboard />
-      </div>
-    );
-  }
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navigation 
-        activeTab={activeTab} 
-        setActiveTab={setActiveTab}
-        isAuthenticated={isAuthenticated}
-        onLoginClick={handleLoginClick}
-        onLogout={handleLogout}
+    <Routes>
+      {/* Public routes with navigation and footer */}
+      <Route
+        path="/*"
+        element={
+          <div className="min-h-screen bg-gray-50">
+            <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+            <main className="pb-8">
+              <Routes>
+                <Route path="/" element={<HomePage />} />
+                <Route path="/register" element={<RegisterPage />} />
+                <Route path="/volunteer" element={<VolunteerPage />} />
+                <Route path="/donate" element={<DonatePage />} />
+                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/about" element={<AboutPage />} />
+                <Route path="/thank-you" element={<ThankYouPage />} />
+                <Route path="/stripe-handler" element={<StripeHandler />} />
+                <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+              </Routes>
+            </main>
+            <Footer />
+          </div>
+        }
       />
-      <main className="pb-8">
-        {renderContent()}
-      </main>
-      <Footer setActiveTab={setActiveTab} />
-    </div>
+
+      {/* Admin routes without navigation and footer */}
+      <Route
+        path="/admin"
+        element={
+          <ProtectedRoute isAuthenticated={isAuthenticated}>
+            <AdminLayout onLogout={handleLogout} onBackToSite={handleBackToSite}>
+              <AdminDashboard />
+            </AdminLayout>
+          </ProtectedRoute>
+        }
+      />
+    </Routes>
+  );
+};
+
+const App = () => {
+  return (
+    <BrowserRouter>
+      <AppContent />
+    </BrowserRouter>
   );
 };
 

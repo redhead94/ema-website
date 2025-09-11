@@ -1,7 +1,8 @@
 import React from "react";
+import { Link } from "react-router-dom";
 import { Heart, Mail, Phone } from "lucide-react";
 
-const Footer = ({ setActiveTab }) => (
+const Footer = () => (
   <footer className="bg-white border-t border-slate-200">
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 grid md:grid-cols-4 gap-8 text-sm">
       <div>
@@ -16,20 +17,35 @@ const Footer = ({ setActiveTab }) => (
       <div>
         <p className="font-semibold mb-2">Get involved</p>
         <ul className="space-y-2 text-slate-600">
-          <li role="button" className="hover:text-indigo-700 cursor-pointer" onClick={() => setActiveTab("donate")}>
-            Donate
+          <li>
+            <Link 
+              to="/donate" 
+              className="hover:text-indigo-700 cursor-pointer transition-colors"
+            >
+              Donate
+            </Link>
           </li>
-          <li role="button" className="hover:text-indigo-700 cursor-pointer" onClick={() => setActiveTab("contact")}>
-            Contact
+          <li>
+            <Link 
+              to="/contact" 
+              className="hover:text-indigo-700 cursor-pointer transition-colors"
+            >
+              Contact
+            </Link>
           </li>
         </ul>
       </div>
       <div>
         <p className="font-semibold mb-2">Contact</p>
         <ul className="space-y-2 text-slate-600">
-          <li className="flex items-center gap-2"><Mail className="h-4 w-4" aria-hidden="true"/> info@essentialmom.net </li>
-          <li className="flex items-center gap-2"><Phone className="h-4 w-4" aria-hidden="true"/> (443) 681-9518 </li>
-
+          <li className="flex items-center gap-2">
+            <Mail className="h-4 w-4" aria-hidden="true"/> 
+            info@essentialmom.net 
+          </li>
+          <li className="flex items-center gap-2">
+            <Phone className="h-4 w-4" aria-hidden="true"/> 
+            (443) 681-9518 
+          </li>
         </ul>
       </div>
     </div>

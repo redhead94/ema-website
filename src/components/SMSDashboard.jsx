@@ -84,38 +84,31 @@ const SMSDashboard = () => {
 
   // Real-time listener for messages when conversation is selected
   useEffect(() => {
-    if (!db || !selectedConversation) return;
+  if (!db || !selectedConversation) return;
 
-    const q = query(
-      collection(db, 'sms_messages'),
-      where('phoneNumber', '==', selectedConversation.phoneNumber),
-      orderBy('sentAt', 'asc')
-    );
+  const q = query(
+    collection(db, 'sms_messages'),
+    where('phoneNumber', '==', selectedConversation.phoneNumber),
+    orderBy('sentAt', 'asc')
+  );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messageList = [];
-      snapshot.forEach((doc) => {
-        const data = doc.data();
-        messageList.push({
-          id: doc.id,
-          ...data,
-          sentAt: data.sentAt?.toDate?.()?.toISOString() || new Date().toISOString()
-        });
+  const unsubscribe = onSnapshot(q, (snapshot) => {
+    const messageList = [];
+    snapshot.forEach((doc) => {
+      const data = doc.data();
+      messageList.push({
+        id: doc.id,
+        ...data,
+        sentAt: data.sentAt?.toDate?.()?.toISOString() || new Date().toISOString()
       });
-      
-      console.log('Loaded messages from Firebase:', messageList);
-      setMessages(messageList);
-      
-      // Mark conversation as read
-      if (messageList.length > 0) {
-        markConversationAsRead(selectedConversation.phoneNumber);
-      }
-    }, (error) => {
-      console.error('Error listening to messages:', error);
     });
+    
+    setMessages(messageList);
+    markConversationAsRead(selectedConversation.phoneNumber);
+  });
 
-    return () => unsubscribe();
-  }, [selectedConversation, firebaseReady]);
+  return () => unsubscribe();
+}, [selectedConversation?.phoneNumber, firebaseReady]);
 
   const markConversationAsRead = async (phoneNumber) => {
     if (!db) return;
@@ -134,48 +127,32 @@ const SMSDashboard = () => {
     if (!newMessage.trim() || !selectedConversation || !db) return;
 
     setSendingMessage(true);
-    try {
-      // Send via Twilio API
-      const response = await fetch('/api/send-sms', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          to: selectedConversation.phoneNumber,
-          message: newMessage,
-          sentBy: 'Admin' // You can make this dynamic based on logged-in user
-        })
-      });
+  try {
+    // Send via Twilio API first
+    const response = await fetch('/api/send-sms', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        to: selectedConversation.phoneNumber,
+        message: newMessage,
+        sentBy: 'Admin'
+      })
+    });
 
-      const data = await response.json();
-      if (data.success) {
-        // Save to Firebase
-        await addDoc(collection(db, 'sms_messages'), {
-          phoneNumber: selectedConversation.phoneNumber,
-          body: newMessage,
-          direction: 'outbound',
-          sentAt: serverTimestamp(),
-          sentBy: 'Admin',
-          twilioSid: data.messageSid
-        });
-
-        // Update conversation
-        const conversationRef = doc(db, 'sms_conversations', selectedConversation.phoneNumber);
-        await updateDoc(conversationRef, {
-          lastMessage: newMessage,
-          lastMessageAt: serverTimestamp(),
-          status: 'active'
-        });
-
-        setNewMessage('');
-      } else {
-        alert('Failed to send message: ' + data.error);
-      }
-    } catch (error) {
-      console.error('Error sending message:', error);
-      alert('Failed to send message');
+    const data = await response.json();
+    if (data.success) {
+      // Don't manually add to Firebase here - let the API handle it
+      // The real-time listener will pick it up automatically
+      setNewMessage('');
+    } else {
+      alert('Failed to send message: ' + data.error);
     }
-    setSendingMessage(false);
-  };
+  } catch (error) {
+    console.error('Error sending message:', error);
+    alert('Failed to send message');
+  }
+  setSendingMessage(false);
+};
 
   const formatPhoneNumber = (phone) => {
     if (!phone) return '';

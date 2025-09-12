@@ -1,7 +1,7 @@
 // api/sms-webhook.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, setDoc, serverTimestamp, getDoc, increment } from 'firebase/firestore';
-import { bumpUnread } from '../src/utils/conversations';
+import { bumpUnread } from '../src/utils/conversation';
 
 // Firebase configuration - replace with your actual config
 const firebaseConfig = {

@@ -1,6 +1,7 @@
 // src/services/firebaseService.js
 import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { updateSMSConversation } from '../utils/smsIntegration'
 
 // Save family registration to Firestore
 export const saveRegistration = async (formData) => {

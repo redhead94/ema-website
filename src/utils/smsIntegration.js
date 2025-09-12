@@ -1,4 +1,5 @@
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../config/firebase';
 
 export const updateSMSConversation = async (phoneNumber, contactInfo) => {
   if (!db || !phoneNumber) return;

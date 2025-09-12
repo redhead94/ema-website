@@ -57,7 +57,8 @@ const ProtectedRoute = ({ children, isAuthenticated }) => {
 const AdminLayout = ({ children, onLogout, onBackToSite }) => {
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-white shadow-sm border-b">
+      {/* FIXED top admin bar */}
+      <header className="fixed top-0 inset-x-0 z-30 bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
             <div className="flex-shrink-0">
@@ -80,11 +81,16 @@ const AdminLayout = ({ children, onLogout, onBackToSite }) => {
             </div>
           </div>
         </div>
-      </div>
-      {children}
+      </header>
+
+      {/* Reserve space for the fixed bar (h-16 = 64px) */}
+      <main className="pt-16">
+        {children}
+      </main>
     </div>
   );
 };
+
 
 // Main app content component
 const AppContent = () => {

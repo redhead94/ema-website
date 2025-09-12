@@ -256,12 +256,11 @@ const AdminDashboard = () => {
       {isMobile && sidebarOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden" />}
 
       {/* Sidebar */}
-      <div
-        className={`sidebar fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
-        ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-        z-50 lg:z-auto
-        lg:translate-x-0 lg:fixed lg:inset-y-0 lg:left-0`}
-      >
+      <div className={`sidebar fixed inset-y-0 left-0 w-64 bg-white shadow-lg transform transition-transform duration-300 ease-in-out
+          ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          z-50 lg:z-10
+          lg:translate-x-0 lg:fixed lg:inset-y-0 lg:left-0`}
+        >
         {/* Logo */}
         <div className="flex items-center justify-between h-16 px-4 sm:px-6 border-b border-gray-200">
           <div className="flex items-center space-x-2 min-w-0">

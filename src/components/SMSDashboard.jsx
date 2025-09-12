@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { MessageCircle, Send, Phone, Clock, User, AlertCircle, RefreshCw } from 'lucide-react';
+import { MessageCircle, Send, Phone, Clock, User, Search, MoreVertical, Circle } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, 
@@ -8,13 +8,11 @@ import {
   orderBy, 
   onSnapshot, 
   where,
-  addDoc,
-  serverTimestamp,
   doc,
   updateDoc
 } from 'firebase/firestore';
 
-// Firebase configuration - same as your other components
+// Firebase configuration
 const firebaseConfig = {
   apiKey: process.env.REACT_APP_FIREBASE_API_KEY,
   authDomain: process.env.REACT_APP_FIREBASE_AUTH_DOMAIN,
@@ -40,22 +38,12 @@ const SMSDashboard = () => {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [messages, setMessages] = useState([]);
   const [newMessage, setNewMessage] = useState('');
-  const [loading, setLoading] = useState(false);
   const [sendingMessage, setSendingMessage] = useState(false);
-  const [firebaseReady, setFirebaseReady] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
-  // Check Firebase initialization
-  useEffect(() => {
-    if (db) {
-      setFirebaseReady(true);
-    }
-  }, []);
-
-  // Real-time listener for conversations
+  // Firebase listeners
   useEffect(() => {
     if (!db) return;
-
-    setLoading(true);
     
     const q = query(
       collection(db, 'sms_conversations'), 
@@ -70,27 +58,17 @@ const SMSDashboard = () => {
           ...doc.data()
         });
       });
-      
-      console.log('Loaded conversations from Firebase:', conversationList);
       setConversations(conversationList);
-      setLoading(false);
-    }, (error) => {
-      console.error('Error listening to conversations:', error);
-      setLoading(false);
     });
 
     return () => unsubscribe();
-  }, [firebaseReady]);
+  }, []);
 
-  // Real-time listener for messages when conversation is selected
   useEffect(() => {
     if (!db || !selectedConversation) {
-      console.log('No db or selected conversation:', { db: !!db, selectedConversation });
       setMessages([]);
       return;
     }
-
-    console.log('Setting up message listener for:', selectedConversation.phoneNumber);
 
     const q = query(
       collection(db, 'sms_messages'),
@@ -99,11 +77,9 @@ const SMSDashboard = () => {
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      console.log('Message snapshot received, size:', snapshot.size);
       const messageList = [];
       snapshot.forEach((doc) => {
         const data = doc.data();
-        console.log('Message data:', data);
         messageList.push({
           id: doc.id,
           ...data,
@@ -111,39 +87,29 @@ const SMSDashboard = () => {
         });
       });
       
-      console.log('Final message list:', messageList);
       setMessages(messageList);
-      
-      // Mark conversation as read when messages are loaded
-      if (messageList.length > 0) {
-        markConversationAsRead(selectedConversation.phoneNumber);
-      }
-    }, (error) => {
-      console.error('Error in message listener:', error);
+      markAsRead();
     });
 
     return () => unsubscribe();
-  }, [selectedConversation?.phoneNumber, firebaseReady]);
+  }, [selectedConversation?.phoneNumber]);
 
-  const markConversationAsRead = async (phoneNumber) => {
-    if (!db) return;
-    
+  const markAsRead = async () => {
+    if (!selectedConversation || !db) return;
     try {
-      const conversationRef = doc(db, 'sms_conversations', phoneNumber);
-      await updateDoc(conversationRef, {
+      await updateDoc(doc(db, 'sms_conversations', selectedConversation.phoneNumber), {
         unreadCount: 0
       });
     } catch (error) {
-      console.error('Error marking conversation as read:', error);
+      console.error('Error marking as read:', error);
     }
   };
 
   const sendMessage = async () => {
-    if (!newMessage.trim() || !selectedConversation || !db) return;
+    if (!newMessage.trim() || !selectedConversation) return;
 
     setSendingMessage(true);
     try {
-      // Send via Twilio API
       const response = await fetch('/api/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -154,21 +120,16 @@ const SMSDashboard = () => {
         })
       });
 
-      const data = await response.json();
-      if (data.success) {
-        // The real-time listener will pick up the sent message automatically
+      if ((await response.json()).success) {
         setNewMessage('');
-      } else {
-        alert('Failed to send message: ' + data.error);
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      alert('Failed to send message');
     }
     setSendingMessage(false);
   };
 
-  const formatPhoneNumber = (phone) => {
+  const formatPhone = (phone) => {
     if (!phone) return '';
     const cleaned = phone.replace(/\D/g, '');
     if (cleaned.length === 11 && cleaned.startsWith('1')) {
@@ -181,8 +142,19 @@ const SMSDashboard = () => {
   const formatTime = (timestamp) => {
     if (!timestamp) return '';
     const date = new Date(timestamp);
-    return date.toLocaleString('en-US', {
-      month: 'short',
+    const now = new Date();
+    const isToday = date.toDateString() === now.toDateString();
+    
+    if (isToday) {
+      return date.toLocaleTimeString('en-US', { 
+        hour: 'numeric', 
+        minute: '2-digit',
+        hour12: true 
+      });
+    }
+    
+    return date.toLocaleDateString('en-US', { 
+      month: 'short', 
       day: 'numeric',
       hour: 'numeric',
       minute: '2-digit',
@@ -190,201 +162,217 @@ const SMSDashboard = () => {
     });
   };
 
-  if (!firebaseReady) {
+  const filteredConversations = conversations.filter(conv =>
+    (conv.contactName || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+    (conv.phoneNumber || '').includes(searchTerm) ||
+    (conv.lastMessage || '').toLowerCase().includes(searchTerm.toLowerCase())
+  );
+
+  if (!db) {
     return (
-      <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-        <div className="p-6">
-          <div className="flex items-center justify-center">
-            <div className="flex items-center space-x-2 text-gray-500">
-              <RefreshCw className="h-5 w-5 animate-spin" />
-              <span>Connecting to Firebase...</span>
-            </div>
-          </div>
+      <div className="h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Connecting to SMS system...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-white rounded-lg shadow-lg overflow-hidden">
-      <div className="bg-gray-50 px-6 py-4 border-b">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-2">
-            <MessageCircle className="h-6 w-6 text-blue-600" />
-            <h2 className="text-xl font-semibold text-gray-900">SMS Management</h2>
-            <span className="text-sm text-gray-500">
-              ({conversations.length} conversations)
-            </span>
-          </div>
-          <div className="flex items-center space-x-2">
-            <div className="flex items-center text-sm text-green-600">
-              <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-              Live Updates
+    <div className="h-screen bg-white flex">
+      {/* Sidebar */}
+      <div className="w-96 border-r border-gray-200 flex flex-col">
+        {/* Header */}
+        <div className="p-6 border-b border-gray-100">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-2xl font-bold text-gray-900">Messages</h1>
+            <div className="flex items-center space-x-2">
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+              <span className="text-sm text-gray-500">Live</span>
             </div>
           </div>
+          
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search conversations..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 bg-gray-50 border-0 rounded-lg focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
+            />
+          </div>
+        </div>
+
+        {/* Conversations */}
+        <div className="flex-1 overflow-y-auto">
+          {filteredConversations.length === 0 ? (
+            <div className="p-6 text-center text-gray-500">
+              <MessageCircle className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+              <p className="font-medium">No conversations yet</p>
+              <p className="text-sm mt-1">Messages will appear here when people text your number</p>
+            </div>
+          ) : (
+            filteredConversations.map((conversation) => (
+              <div
+                key={conversation.id}
+                onClick={() => setSelectedConversation(conversation)}
+                className={`p-4 border-b border-gray-50 hover:bg-gray-50 cursor-pointer transition-colors relative ${
+                  selectedConversation?.id === conversation.id ? 'bg-blue-50 border-blue-200' : ''
+                }`}
+              >
+                {/* Avatar */}
+                <div className="flex items-start space-x-3">
+                  <div className="relative">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                      {conversation.contactName ? conversation.contactName.charAt(0).toUpperCase() : 'U'}
+                    </div>
+                    {conversation.unreadCount > 0 && (
+                      <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-semibold">
+                        {conversation.unreadCount}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between mb-1">
+                      <h3 className="font-semibold text-gray-900 truncate">
+                        {conversation.contactName || 'Unknown Contact'}
+                      </h3>
+                      <span className="text-xs text-gray-500">
+                        {formatTime(conversation.lastMessageAt?.toDate?.())}
+                      </span>
+                    </div>
+                    
+                    <p className="text-sm text-gray-600 truncate">
+                      {formatPhone(conversation.phoneNumber)}
+                    </p>
+                    
+                    <p className="text-sm text-gray-500 truncate mt-1">
+                      {conversation.lastMessage || 'No messages yet'}
+                    </p>
+                    
+                    {conversation.contactType && (
+                      <div className="mt-2">
+                        <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                          conversation.contactType === 'family' 
+                            ? 'bg-pink-100 text-pink-800' 
+                            : conversation.contactType === 'volunteer'
+                            ? 'bg-blue-100 text-blue-800'
+                            : 'bg-gray-100 text-gray-800'
+                        }`}>
+                          {conversation.contactType}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
-      <div className="flex h-96">
-        {/* Conversations List */}
-        <div className="w-1/3 border-r border-gray-200 overflow-y-auto">
-          <div className="p-4">
-            <h3 className="text-sm font-medium text-gray-700 mb-3">Conversations</h3>
-            {loading ? (
-              <div className="text-center py-4 text-gray-500">Loading...</div>
-            ) : conversations.length === 0 ? (
-              <div className="text-center py-4 text-gray-500">
-                <MessageCircle className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                <p>No conversations yet</p>
-                <p className="text-xs mt-1">Send a text to your Twilio number to get started</p>
-              </div>
-            ) : (
-              <div className="space-y-2">
-                {conversations.map((conversation) => (
-                  <div
-                    key={conversation.id}
-                    onClick={() => setSelectedConversation(conversation)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedConversation?.id === conversation.id
-                        ? 'bg-blue-50 border-blue-200'
-                        : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-1">
-                      <div className="flex items-center space-x-2">
-                        <Phone className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-900">
-                          {conversation.contactName || formatPhoneNumber(conversation.phoneNumber)}
-                        </span>
-                        {conversation.contactType && (
-                          <span className={`text-xs px-1 py-0.5 rounded ${
-                            conversation.contactType === 'family' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'
-                          }`}>
-                            {conversation.contactType}
-                          </span>
-                        )}
-                      </div>
-                      {conversation.unreadCount > 0 && (
-                        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-                          {conversation.unreadCount}
-                        </span>
-                      )}
-                    </div>
-                    <p className="text-xs text-gray-500 truncate">
-                      {conversation.lastMessage}
-                    </p>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-xs text-gray-400">
-                        {formatTime(conversation.lastMessageAt?.toDate?.())}
-                      </span>
-                      <span className={`text-xs px-2 py-1 rounded ${
-                        conversation.status === 'active' ? 'bg-green-100 text-green-800' :
-                        conversation.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                        'bg-gray-100 text-gray-800'
-                      }`}>
-                        {conversation.status}
-                      </span>
-                    </div>
+      {/* Main Chat Area */}
+      <div className="flex-1 flex flex-col">
+        {selectedConversation ? (
+          <>
+            {/* Chat Header */}
+            <div className="p-4 border-b border-gray-200 bg-white">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-3">
+                  <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold">
+                    {selectedConversation.contactName ? selectedConversation.contactName.charAt(0).toUpperCase() : 'U'}
                   </div>
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-
-        {/* Messages Area */}
-        <div className="flex-1 flex flex-col">
-          {selectedConversation ? (
-            <>
-              {/* Messages Header */}
-              <div className="p-4 border-b border-gray-200">
-                <div className="flex items-center space-x-2">
-                  <User className="h-5 w-5 text-gray-400" />
                   <div>
-                    <h3 className="font-medium text-gray-900">
+                    <h2 className="font-semibold text-gray-900">
                       {selectedConversation.contactName || 'Unknown Contact'}
-                    </h3>
+                    </h2>
                     <p className="text-sm text-gray-500">
-                      {formatPhoneNumber(selectedConversation.phoneNumber)}
+                      {formatPhone(selectedConversation.phoneNumber)}
                     </p>
                   </div>
                 </div>
-              </div>
-
-              {/* Messages List */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-3">
-                {messages.length === 0 ? (
-                  <div className="text-center py-4 text-gray-500">
-                    <Clock className="h-8 w-8 mx-auto mb-2 text-gray-300" />
-                    <p>No messages found</p>
-                    <p className="text-xs mt-1">Check console for debugging info</p>
-                  </div>
-                ) : (
-                  messages.map((message) => (
-                    <div
-                      key={message.id}
-                      className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
-                    >
-                      <div
-                        className={`max-w-xs lg:max-w-md px-3 py-2 rounded-lg ${
-                          message.direction === 'outbound'
-                            ? 'bg-blue-600 text-white'
-                            : 'bg-gray-200 text-gray-900'
-                        }`}
-                      >
-                        <p className="text-sm">{message.body}</p>
-                        <div className={`flex items-center space-x-1 mt-1 ${
-                          message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-500'
-                        }`}>
-                          <Clock className="h-3 w-3" />
-                          <span className="text-xs">
-                            {formatTime(message.sentAt)}
-                            {message.direction === 'outbound' && message.sentBy && (
-                              ` • ${message.sentBy}`
-                            )}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              {/* Message Input */}
-              <div className="p-4 border-t border-gray-200">
-                <div className="flex space-x-2">
-                  <input
-                    type="text"
-                    value={newMessage}
-                    onChange={(e) => setNewMessage(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="Type your message..."
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                    disabled={sendingMessage}
-                  />
-                  <button
-                    onClick={sendMessage}
-                    disabled={!newMessage.trim() || sendingMessage}
-                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                  >
-                    {sendingMessage ? (
-                      <RefreshCw className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <Send className="h-4 w-4" />
-                    )}
-                  </button>
-                </div>
-              </div>
-            </>
-          ) : (
-            <div className="flex-1 flex items-center justify-center text-gray-500">
-              <div className="text-center">
-                <MessageCircle className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                <p>Select a conversation to view messages</p>
+                <button className="p-2 hover:bg-gray-100 rounded-lg">
+                  <MoreVertical className="h-5 w-5 text-gray-500" />
+                </button>
               </div>
             </div>
-          )}
-        </div>
+
+            {/* Messages */}
+            <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50">
+              {messages.length === 0 ? (
+                <div className="text-center py-12">
+                  <Circle className="h-16 w-16 text-gray-300 mx-auto mb-4" />
+                  <p className="text-gray-500">No messages in this conversation</p>
+                </div>
+              ) : (
+                messages.map((message) => (
+                  <div
+                    key={message.id}
+                    className={`flex ${message.direction === 'outbound' ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className={`max-w-sm lg:max-w-md px-4 py-3 rounded-2xl ${
+                      message.direction === 'outbound'
+                        ? 'bg-blue-600 text-white rounded-br-md'
+                        : 'bg-white text-gray-900 shadow-sm border border-gray-100 rounded-bl-md'
+                    }`}>
+                      <p className="text-sm leading-relaxed">{message.body}</p>
+                      <div className={`flex items-center justify-end space-x-1 mt-2 ${
+                        message.direction === 'outbound' ? 'text-blue-100' : 'text-gray-400'
+                      }`}>
+                        <span className="text-xs">
+                          {formatTime(message.sentAt)}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            {/* Message Input */}
+            <div className="p-4 bg-white border-t border-gray-200">
+              <div className="flex items-end space-x-3">
+                <div className="flex-1">
+                  <textarea
+                    value={newMessage}
+                    onChange={(e) => setNewMessage(e.target.value)}
+                    onKeyPress={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        sendMessage();
+                      }
+                    }}
+                    placeholder="Type a message..."
+                    rows={1}
+                    className="w-full px-4 py-3 border border-gray-200 rounded-2xl focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                    style={{ minHeight: '44px', maxHeight: '120px' }}
+                  />
+                </div>
+                <button
+                  onClick={sendMessage}
+                  disabled={!newMessage.trim() || sendingMessage}
+                  className="p-3 bg-blue-600 text-white rounded-full hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Send className="h-5 w-5" />
+                </button>
+              </div>
+            </div>
+          </>
+        ) : (
+          <div className="flex-1 flex items-center justify-center bg-gray-50">
+            <div className="text-center">
+              <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center mx-auto mb-6">
+                <MessageCircle className="h-12 w-12 text-white" />
+              </div>
+              <h3 className="text-xl font-semibold text-gray-900 mb-2">Select a conversation</h3>
+              <p className="text-gray-500">Choose a conversation from the sidebar to start messaging</p>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

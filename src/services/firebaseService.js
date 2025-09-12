@@ -27,12 +27,14 @@ export const saveRegistration = async (formData) => {
       formData.primaryPhone;
     
     if (phone) {
-      await updateSMSConversation({
-        phoneRaw: phone,
-        contactName: formData.motherName || formData.name,
-        contactType: 'family',
-        linkFields: { registrationId: docRef.id },
-      });
+            await updateSMSConversation(
+              phone,
+              {
+                contactName: formData.motherName || formData.name,
+                contactType: 'family',
+                registrationId: docRef.id,
+              }
+            );
     }
 
     console.log('Registration saved with ID:', docRef.id);
@@ -60,12 +62,19 @@ export const saveVolunteer = async (formData) => {
     // ✅ Ensure a single conversation per phone for SMS dashboard
     const phone = formData.volunteerPhone || formData.phone;
     if (phone) {
-      await updateSMSConversation({
-        phoneRaw: phone,
-        contactName: formData.volunteerName || formData.name,
-        contactType: 'volunteer',
-        linkFields: { volunteerId: docRef.id },
-      });
+       await updateSMSConversation(
+   phone,
+   {
+     contactName: formData.volunteerName || formData.name,
+     contactType: 'volunteer',
+     volunteerId: docRef.id,
+     email: formData.volunteerEmail || null,
+     availableDays: formData.availableDays || [],
+     availableTimes: formData.availableTimes || [],
+     bestContactMethod: formData.bestContactMethod || null,
+     registrationDate: serverTimestamp(),
+   }
+ );
     }
 
     return { success: true, id: docRef.id };

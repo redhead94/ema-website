@@ -3,41 +3,33 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  getDocs
+  getDocs,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { updateSMSConversation } from '../utils/smsIntegration'
+import { ensureConversation } from '../utils/conversation';
 
-/* ------------------------------------------------------------------ */
-/* Save family registration to Firestore                               */
-/* ------------------------------------------------------------------ */
+/* ----------------------- Save family registration ----------------------- */
 export const saveRegistration = async (formData) => {
   try {
     const docRef = await addDoc(collection(db, 'registrations'), {
       ...formData,
       createdAt: serverTimestamp(),
-      status: 'pending', // pending, active, completed
+      status: 'pending',
     });
 
-    // OPTIONAL: if you want families to appear in SMS right away
     const phone =
       formData.motherPhone ||
       formData.phone ||
       formData.contactPhone ||
       formData.primaryPhone;
-    
-    if (phone) {
-            await updateSMSConversation(
-              phone,
-              {
-                contactName: formData.motherName || formData.name,
-                contactType: 'family',
-                registrationId: docRef.id,
-              }
-            );
-    }
 
-    console.log('Registration saved with ID:', docRef.id);
+    if (phone) {
+      await ensureConversation(phone, {
+        contactName: formData.motherName || formData.name,
+        contactType: 'family',
+        registrationId: docRef.id,
+      });
+    }
 
     return { success: true, id: docRef.id };
   } catch (error) {
@@ -46,35 +38,29 @@ export const saveRegistration = async (formData) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* Save volunteer application to Firestore                             */
-/* ------------------------------------------------------------------ */
+/* ----------------------- Save volunteer application --------------------- */
 export const saveVolunteer = async (formData) => {
   try {
     const docRef = await addDoc(collection(db, 'volunteers'), {
       ...formData,
       createdAt: serverTimestamp(),
-      status: 'pending', // pending, approved, active
+      status: 'pending',
       availableDays: formData.availableDays || [],
       availableTimes: formData.availableTimes || [],
     });
 
-    // ✅ Ensure a single conversation per phone for SMS dashboard
     const phone = formData.volunteerPhone || formData.phone;
     if (phone) {
-       await updateSMSConversation(
-   phone,
-   {
-     contactName: formData.volunteerName || formData.name,
-     contactType: 'volunteer',
-     volunteerId: docRef.id,
-     email: formData.volunteerEmail || null,
-     availableDays: formData.availableDays || [],
-     availableTimes: formData.availableTimes || [],
-     bestContactMethod: formData.bestContactMethod || null,
-     registrationDate: serverTimestamp(),
-   }
- );
+      await ensureConversation(phone, {
+        contactName: formData.volunteerName || formData.name,
+        contactType: 'volunteer',
+        volunteerId: docRef.id,
+        email: formData.volunteerEmail || null,
+        availableDays: formData.availableDays || [],
+        availableTimes: formData.availableTimes || [],
+        bestContactMethod: formData.bestContactMethod || null,
+        registrationDate: serverTimestamp(),
+      });
     }
 
     return { success: true, id: docRef.id };
@@ -84,29 +70,24 @@ export const saveVolunteer = async (formData) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* Save contact form message to Firestore                              */
-/* ------------------------------------------------------------------ */
+/* ----------------------- Save contact message --------------------------- */
 export const saveContact = async (formData) => {
   try {
     const docRef = await addDoc(collection(db, 'contacts'), {
       ...formData,
       createdAt: serverTimestamp(),
-      status: 'unread', // unread, read, responded
+      status: 'unread',
     });
 
-    // OPTIONAL: create/merge an SMS conversation if a phone was provided
     const phone = formData.phone || formData.contactPhone;
     if (phone) {
-      await updateSMSConversation({
-        phoneRaw: phone,
+      await ensureConversation(phone, {
         contactName: formData.name,
         contactType: 'contact',
-        linkFields: { contactId: docRef.id },
+        contactId: docRef.id,
       });
     }
 
-    console.log('Contact saved with ID:', docRef.id);
     return { success: true, id: docRef.id };
   } catch (error) {
     console.error('Error saving contact:', error);
@@ -114,43 +95,32 @@ export const saveContact = async (formData) => {
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* Get all registrations (for admin)                                   */
-/* ------------------------------------------------------------------ */
+/* ----------------------- Getters (admin) -------------------------------- */
 export const getRegistrations = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'registrations'));
-    const registrations = [];
-    querySnapshot.forEach((d) => {
-      registrations.push({ id: d.id, ...d.data() });
-    });
-    return { success: true, data: registrations };
+    const qs = await getDocs(collection(db, 'registrations'));
+    const list = [];
+    qs.forEach((d) => list.push({ id: d.id, ...d.data() }));
+    return { success: true, data: list };
   } catch (error) {
     console.error('Error getting registrations:', error);
     return { success: false, error: error.message };
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* Get all volunteers (for admin)                                      */
-/* ------------------------------------------------------------------ */
 export const getVolunteers = async () => {
   try {
-    const querySnapshot = await getDocs(collection(db, 'volunteers'));
-    const volunteers = [];
-    querySnapshot.forEach((d) => {
-      volunteers.push({ id: d.id, ...d.data() });
-    });
-    return { success: true, data: volunteers };
+    const qs = await getDocs(collection(db, 'volunteers'));
+    const list = [];
+    qs.forEach((d) => list.push({ id: d.id, ...d.data() }));
+    return { success: true, data: list };
   } catch (error) {
     console.error('Error getting volunteers:', error);
     return { success: false, error: error.message };
   }
 };
 
-/* ------------------------------------------------------------------ */
-/* Save donation                                                       */
-/* ------------------------------------------------------------------ */
+/* ----------------------- Save donation ---------------------------------- */
 export async function saveDonation(donation) {
   try {
     const docData = {
@@ -160,7 +130,7 @@ export async function saveDonation(donation) {
       donorMessage: donation.donorMessage || '',
       amountCents: donation.amountCents,
       currency: donation.currency || 'usd',
-      amountDisplay: donation.amountDisplay, // "$25.00"
+      amountDisplay: donation.amountDisplay,
       sessionId: donation.sessionId,
       paymentIntentId: donation.paymentIntentId,
       chargeId: donation.chargeId,

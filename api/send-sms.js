@@ -42,7 +42,8 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { to, message, sentBy = 'Admin' } = req.body;
+    const { message, sentBy = 'Admin' } = req.body;
+    const to = normalizePhone(req.body.to);
 
     // Validate required fields
     if (!to || !message) {
@@ -74,6 +75,7 @@ export default async function handler(req, res) {
     // Save to Firebase if available
     if (db) {
       try {
+        
         // Save the outbound message
         await addDoc(collection(db, 'sms_messages'), {
           phoneNumber: to,

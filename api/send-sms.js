@@ -1,6 +1,7 @@
 // api/send-sms.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { upsertConversation, normalizePhone } from '../../src/utils/conversations';
 
 const twilio = require('twilio');
 
@@ -85,6 +86,13 @@ export default async function handler(req, res) {
           sentBy: sentBy,
           twilioSid: twilioMessage.sid
         });
+
+        await upsertConversation(to, {
+        lastMessage: req.body.message,
+        lastMessageDirection: 'outbound',
+      });
+
+
 
         console.log('Outbound message saved to Firebase');
 

@@ -1,6 +1,7 @@
 // api/sms-webhook.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, setDoc, serverTimestamp, getDoc, increment } from 'firebase/firestore';
+import { bumpUnread, normalizePhone } from '../../src/utils/conversations';
 
 // Firebase configuration - replace with your actual config
 const firebaseConfig = {
@@ -85,6 +86,7 @@ async function saveSMSToFirebase({ phoneNumber, body, direction, twilioSid, to }
     };
 
     await addDoc(collection(db, 'sms_messages'), messageData);
+    await bumpUnread(from, body);
     console.log('Message saved to sms_messages collection');
 
     // Update or create conversation

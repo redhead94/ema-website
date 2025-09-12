@@ -17,6 +17,8 @@ import {
   updateDoc,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { normalizePhone  } from '../utils/smsIntegration';
+
 
 const SMSDashboard = () => {
   const [conversations, setConversations] = useState([]);
@@ -67,6 +69,9 @@ const SMSDashboard = () => {
     });
     return unsubscribe;
   }, [selectedConversation?.phoneNumber]);
+
+  const phone = normalizePhone(selectedConversation.phoneNumber);
+  const q = query(collection(db, 'sms_messages'), where('phoneNumber', '==', phone), orderBy('sentAt', 'asc'));
 
   // Mark conversation as read (use doc id, not phone)
   const markAsRead = async () => {

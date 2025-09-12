@@ -25,3 +25,13 @@ export async function bumpUnread(rawPhone, lastMessage) {
     unreadCount: increment(1),
   }, { merge: true });
 }
+
+export async function markRead(phoneRaw) {
+  const phone = normalizePhone(phoneRaw);
+  if (!phone) return;
+  await setDoc(
+    doc(db, 'sms_conversations', phone),
+    { phoneNumber: phone, unreadCount: 0 },
+    { merge: true }
+  );
+}

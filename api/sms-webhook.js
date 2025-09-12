@@ -93,24 +93,23 @@ async function saveSMSToFirebase({ phoneNumber, body, direction, twilioSid, to }
 
     if (conversationDoc.exists()) {
       // Update existing conversation
-      await setDoc(conversationRef, {
-        lastMessage: body,
-        lastMessageAt: serverTimestamp(),
-        unreadCount: increment(1),
-        status: 'active'
-      }, { merge: true });
-      console.log('Updated existing conversation');
+       await setDoc(conversationRef, {
+            phoneNumber,
+            contactName: null,
+            lastMessage: body,
+            lastMessageAt: serverTimestamp(),
+            unreadCount: 1,
+            status: 'pending',
+            assignedTo: null
+        });
     } else {
       // Create new conversation
       await setDoc(conversationRef, {
-        phoneNumber,
-        contactName: null, // Can be updated later
-        lastMessage: body,
-        lastMessageAt: serverTimestamp(),
-        unreadCount: 1,
-        status: 'pending', // New conversations start as pending
-        assignedTo: null
-      });
+            lastMessage: body,
+            lastMessageAt: serverTimestamp(),
+            unreadCount: increment(1),
+            status: 'active' // Change from 'registered' to 'active' when they actually text
+        }, { merge: true });
       console.log('Created new conversation');
     }
 

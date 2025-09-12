@@ -256,6 +256,13 @@ const SMSDashboard = () => {
                         <span className="text-sm font-medium text-gray-900">
                           {conversation.contactName || formatPhoneNumber(conversation.phoneNumber)}
                         </span>
+                        {conversation.contactType && (
+                          <span className={`text-xs px-1 py-0.5 rounded ${
+                            conversation.contactType === 'family' ? 'bg-pink-100 text-pink-800' : 'bg-blue-100 text-blue-800'
+                          }`}>
+                            {conversation.contactType}
+                          </span>
+                        )}
                       </div>
                       {conversation.unreadCount > 0 && (
                         <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">

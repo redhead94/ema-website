@@ -66,6 +66,7 @@ export const saveRegistration = async (formData) => {
       formData.phone ||
       formData.contactPhone ||
       formData.primaryPhone;
+    
     if (phone) {
       await upsertSmsConversation({
         phoneRaw: phone,
@@ -76,19 +77,6 @@ export const saveRegistration = async (formData) => {
     }
 
     console.log('Registration saved with ID:', docRef.id);
-
-    if (formData.motherPhone){
-      await updateSMSConversation(formData.motherPhone, {
-        contactName: formData.motherName,
-        email: formData.motherEmail,
-        address: formData.address,
-        babyBirthday: formData.babyBirthday,
-        dietaryRestrictions: formData.dietaryRestrictions,
-        numberOfChildren: formData.numberOfChildren,
-        contactType: 'family',
-        registrationDate: serverTimestamp()
-      });
-    }
 
     return { success: true, id: docRef.id };
   } catch (error) {
@@ -118,20 +106,6 @@ export const saveVolunteer = async (formData) => {
         contactName: formData.volunteerName || formData.name,
         contactType: 'volunteer',
         linkFields: { volunteerId: docRef.id },
-      });
-    }
-
-    console.log('Volunteer saved with ID:', docRef.id);
-
-     if (formData.volunteerPhone) {
-      await updateSMSConversation(formData.volunteerPhone, {
-        contactName: formData.volunteerName,
-        email: formData.volunteerEmail,
-        availableDays: formData.availableDays,
-        availableTimes: formData.availableTimes,
-        bestContactMethod: formData.bestContactMethod,
-        contactType: 'volunteer',
-        registrationDate: serverTimestamp()
       });
     }
 

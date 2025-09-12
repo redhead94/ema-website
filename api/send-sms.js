@@ -1,7 +1,7 @@
 // api/send-sms.js
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc, doc, updateDoc, serverTimestamp } from 'firebase/firestore';
-import { ensureConversation, normalizePhone } from '../../src/utils/conversation';
+import { ensureConversation, normalizePhone } from '../src/utils/conversation';
 
 const twilio = require('twilio');
 

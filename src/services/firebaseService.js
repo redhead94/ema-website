@@ -3,51 +3,10 @@ import {
   collection,
   addDoc,
   serverTimestamp,
-  getDocs,
-  doc,
-  setDoc,
+  getDocs
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { updateSMSConversation } from '../utils/smsIntegration'
-
-/* ------------------------------------------------------------------ */
-/* Helpers: phone normalization + sms_conversations upsert             */
-/* ------------------------------------------------------------------ */
-
-function normalizePhone(raw) {
-  if (!raw) return '';
-  const digits = String(raw).replace(/\D/g, '');
-  // Basic US E.164: add leading 1 if 10 digits; keep leading 1 if 11; else prefix +
-  if (digits.length === 10) return `+1${digits}`;
-  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
-  return `+${digits}`; // fallback for other lengths
-}
-
-async function upsertSmsConversation({
-  phoneRaw,
-  contactName,
-  contactType, // 'volunteer' | 'family' | 'contact'
-  linkFields = {}, // e.g., { volunteerId, registrationId }
-  lastMessage,
-}) {
-  const phone = normalizePhone(phoneRaw);
-  if (!phone) return;
-
-  const ref = doc(db, 'sms_conversations', phone); // one doc per phone
-  const payload = {
-    phoneNumber: phone,
-    contactName: contactName || 'Unknown Contact',
-    contactType: contactType || 'contact',
-    lastMessage: lastMessage || null,
-    lastMessageDirection: lastMessage ? 'outbound' : null,
-    lastMessageAt: serverTimestamp(),
-    unreadCount: 0,
-    ...linkFields,
-  };
-
-  await setDoc(ref, payload, { merge: true });
-  return phone;
-}
 
 /* ------------------------------------------------------------------ */
 /* Save family registration to Firestore                               */
@@ -68,7 +27,7 @@ export const saveRegistration = async (formData) => {
       formData.primaryPhone;
     
     if (phone) {
-      await upsertSmsConversation({
+      await updateSMSConversation({
         phoneRaw: phone,
         contactName: formData.motherName || formData.name,
         contactType: 'family',
@@ -101,7 +60,7 @@ export const saveVolunteer = async (formData) => {
     // ✅ Ensure a single conversation per phone for SMS dashboard
     const phone = formData.volunteerPhone || formData.phone;
     if (phone) {
-      await upsertSmsConversation({
+      await updateSMSConversation({
         phoneRaw: phone,
         contactName: formData.volunteerName || formData.name,
         contactType: 'volunteer',
@@ -130,7 +89,7 @@ export const saveContact = async (formData) => {
     // OPTIONAL: create/merge an SMS conversation if a phone was provided
     const phone = formData.phone || formData.contactPhone;
     if (phone) {
-      await upsertSmsConversation({
+      await updateSMSConversation({
         phoneRaw: phone,
         contactName: formData.name,
         contactType: 'contact',

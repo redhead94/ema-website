@@ -1,19 +1,21 @@
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+// src/utils/smsIntegration.js
+import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
 
-export const updateSMSConversation = async (phoneNumber, contactInfo) => {
-  if (!db || !phoneNumber) return;
-  
-  const conversationRef = doc(db, 'sms_conversations', phoneNumber);
-  
-  // Update or create conversation with contact info
-  await setDoc(conversationRef, {
-    phoneNumber,
-    lastMessage: null,
-    lastMessageAt: null,
-    unreadCount: 0,
-    status: 'registered', // New status for pre-registered contacts
-    assignedTo: null,
-    ...contactInfo
-  }, { merge: true }); // merge: true preserves existing conversation data if it exists
-};
+export function normalizePhone(raw) {
+  if (!raw) return '';
+  const digits = String(raw).replace(/\D/g, '');
+  if (digits.length === 10) return `+1${digits}`;
+  if (digits.length === 11 && digits.startsWith('1')) return `+${digits}`;
+  return `+${digits}`;
+}
+
+export async function updateSMSConversation(phoneRaw, fields) {
+  const phone = normalizePhone(phoneRaw);
+  if (!phone) return;
+  await setDoc(
+    doc(db, 'sms_conversations', phone),    // ✅ same canonical id
+    { phoneNumber: phone, ...fields },
+    { merge: true }
+  );
+}

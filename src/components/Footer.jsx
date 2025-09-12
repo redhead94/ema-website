@@ -44,7 +44,7 @@ const Footer = () => (
           </li>
           <li className="flex items-center gap-2">
             <Phone className="h-4 w-4" aria-hidden="true"/> 
-            (443) 681-9518 
+            (301) 923-4815 
           </li>
         </ul>
       </div>

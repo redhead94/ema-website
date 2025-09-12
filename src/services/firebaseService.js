@@ -1,6 +1,7 @@
 // src/services/firebaseService.js
 import { collection, addDoc, serverTimestamp, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { updateSMSConversation } from '../utils/smsIntegration'
 
 // Save family registration to Firestore
 export const saveRegistration = async (formData) => {
@@ -12,6 +13,20 @@ export const saveRegistration = async (formData) => {
     });
     
     console.log('Registration saved with ID:', docRef.id);
+
+    if (formData.motherPhone){
+      await updateSMSConversation(formData.motherPhone, {
+        contactName: formData.motherName,
+        email: formData.motherEmail,
+        address: formData.address,
+        babyBirthday: formData.babyBirthday,
+        dietaryRestrictions: formData.dietaryRestrictions,
+        numberOfChildren: formData.numberOfChildren,
+        contactType: 'family',
+        registrationDate: serverTimestamp()
+      });
+    }
+
     return { success: true, id: docRef.id };
   } catch (error) {
     console.error('Error saving registration:', error);
@@ -31,6 +46,19 @@ export const saveVolunteer = async (formData) => {
     });
     
     console.log('Volunteer saved with ID:', docRef.id);
+
+     if (formData.volunteerPhone) {
+      await updateSMSConversation(formData.volunteerPhone, {
+        contactName: formData.volunteerName,
+        email: formData.volunteerEmail,
+        availableDays: formData.availableDays,
+        availableTimes: formData.availableTimes,
+        bestContactMethod: formData.bestContactMethod,
+        contactType: 'volunteer',
+        registrationDate: serverTimestamp()
+      });
+    }
+
     return { success: true, id: docRef.id };
   } catch (error) {
     console.error('Error saving volunteer:', error);

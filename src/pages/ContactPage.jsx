@@ -29,7 +29,7 @@ const ContactPage = () => {
             </div>
             <div className="flex items-center">
               <Phone className="w-5 h-5 text-blue-600 mr-3" />
-              <span className="text-gray-600">(443) 681-9518</span>
+              <span className="text-gray-600">(301) 923-4815</span>
             </div>
             <div className="flex items-center">
               <MapPin className="w-5 h-5 text-blue-600 mr-3" />

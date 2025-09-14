@@ -107,7 +107,7 @@ const useFormData = (initialState = {}) => {
 
             // Send welcome SMS
             smsSuccess = await sendWelcomeSMSWithType(
-              formData.phone, 
+              formData.motherPhone, 
               'family', 
               formData.motherName
             );
@@ -120,9 +120,9 @@ const useFormData = (initialState = {}) => {
             firebaseResult = await saveVolunteer(formData);
             // Send welcome SMS
             smsSuccess = await sendWelcomeSMSWithType(
-              formData.phone, 
+              formData.volunteerPhone, 
               'volunteer', 
-              formData.name
+              formData.volunteerName
             );
 
             if (!smsSuccess) {

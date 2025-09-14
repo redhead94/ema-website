@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Menu, X, Search, Heart, Users, Mail, DollarSign, MessageCircle, Home, Settings, LogOut, TrendingUp } from 'lucide-react';
+import { Menu, X, Heart, Users, Mail, DollarSign, MessageCircle, Home, Settings, LogOut, TrendingUp } from 'lucide-react';
 import SMSDashboard from '../components/SMSDashboard';
 import { useAdminData, formatDate } from '../hooks/useAdminData';
 import VolunteerCard from '../components/admin/VolunteerCard';
@@ -76,8 +76,7 @@ export default function AdminDashboard() {
     { id: 'volunteers', name: 'Volunteers', icon: Users, count: volunteers.length },
     { id: 'registrations', name: 'Families', icon: Heart, count: registrations.length },
     { id: 'contacts', name: 'Contact Forms', icon: Mail, count: contacts.length },
-    { id: 'donations', name: 'Donations', icon: DollarSign, count: donations.length },
-    { id: 'settings', name: 'Settings', icon: Settings },
+    { id: 'donations', name: 'Donations', icon: DollarSign, count: donations.length }
   ];
 
   if (loading) {

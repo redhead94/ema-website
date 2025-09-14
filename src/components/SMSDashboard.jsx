@@ -6,6 +6,9 @@ import {
   MoreVertical,
   Circle,
   ArrowLeft,
+  Edit3,
+  Check,
+  X
 } from 'lucide-react';
 import {
   collection,
@@ -13,7 +16,9 @@ import {
   orderBy,
   onSnapshot,
   where,
-  getDocs
+  getDocs,
+  doc,
+  updateDoc
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
 import { normalizePhone, markRead } from '../utils/conversation';
@@ -25,6 +30,47 @@ const SMSDashboard = () => {
   const [newMessage, setNewMessage] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [editingContactId, setEditingContactId] = useState(null);
+  const [tempContactName, setTempContactName] = useState('');
+  const [savingContact, setSavingContact] = useState(false);
+
+  // --- Contact renaming functions ---
+  const startEditing = (conversation) => {
+    setEditingContactId(conversation.id);
+    setTempContactName(conversation.contactName || '');
+  };
+
+  const cancelEditing = () => {
+    setEditingContactId(null);
+    setTempContactName('');
+  };
+
+  const saveContactName = async (conversationId) => {
+    if (savingContact) return;
+    
+    setSavingContact(true);
+    try {
+      const conversationRef = doc(db, 'sms_conversations', conversationId);
+      await updateDoc(conversationRef, {
+        contactName: tempContactName.trim() || 'Unknown Contact'
+      });
+      
+      // Update selected conversation if it's the one being edited
+      if (selectedConversation?.id === conversationId) {
+        setSelectedConversation(prev => ({
+          ...prev,
+          contactName: tempContactName.trim() || 'Unknown Contact'
+        }));
+      }
+      
+      setEditingContactId(null);
+      setTempContactName('');
+    } catch (error) {
+      console.error('Error updating contact name:', error);
+    } finally {
+      setSavingContact(false);
+    }
+  };
 
   // --- helpers ---
   const safePhone = (c) => normalizePhone(c?.phoneNumber || c?.id || '');
@@ -60,21 +106,37 @@ const SMSDashboard = () => {
   };
 
   // --- conversations listener ---
-useEffect(() => {
-  if (!db) return;
-  // Try ordered query first, then gracefully fall back to an unordered read
-  const ordered = query(
-    collection(db, 'sms_conversations'),
-    orderBy('lastMessageAt', 'desc')
-  );
-  const unsub = onSnapshot(
-    ordered,
-    async (snap) => {
-      let list = [];
-      snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
+  useEffect(() => {
+    if (!db) return;
+    // Try ordered query first, then gracefully fall back to an unordered read
+    const ordered = query(
+      collection(db, 'sms_conversations'),
+      orderBy('lastMessageAt', 'desc')
+    );
+    const unsub = onSnapshot(
+      ordered,
+      async (snap) => {
+        let list = [];
+        snap.forEach((d) => list.push({ id: d.id, ...d.data() }));
 
-      if (list.length === 0) {
-        // Fallback: read without order (handles older docs missing lastMessageAt)
+        if (list.length === 0) {
+          // Fallback: read without order (handles older docs missing lastMessageAt)
+          try {
+            const raw = await getDocs(collection(db, 'sms_conversations'));
+            const fallback = [];
+            raw.forEach((d) => fallback.push({ id: d.id, ...d.data() }));
+            setConversations(fallback);
+          } catch (e) {
+            console.warn('sms_conversations fallback failed', e);
+            setConversations([]);
+          }
+        } else {
+          setConversations(list);
+        }
+      },
+      async (err) => {
+        // If the ordered query errors (e.g., index/field issues), fall back
+        console.warn('ordered conversations query error, falling back:', err);
         try {
           const raw = await getDocs(collection(db, 'sms_conversations'));
           const fallback = [];
@@ -84,27 +146,10 @@ useEffect(() => {
           console.warn('sms_conversations fallback failed', e);
           setConversations([]);
         }
-      } else {
-        setConversations(list);
       }
-    },
-    async (err) => {
-      // If the ordered query errors (e.g., index/field issues), fall back
-      console.warn('ordered conversations query error, falling back:', err);
-      try {
-        const raw = await getDocs(collection(db, 'sms_conversations'));
-        const fallback = [];
-        raw.forEach((d) => fallback.push({ id: d.id, ...d.data() }));
-        setConversations(fallback);
-      } catch (e) {
-        console.warn('sms_conversations fallback failed', e);
-        setConversations([]);
-      }
-    }
-  );
-  return unsub;
-}, []);
-
+    );
+    return unsub;
+  }, []);
 
   // --- messages listener (guarded) ---
   useEffect(() => {
@@ -225,65 +270,128 @@ useEffect(() => {
               const lastAt = c.lastMessageAt?.toDate?.()
                 ? c.lastMessageAt.toDate()
                 : null;
+              const isEditing = editingContactId === c.id;
+              
               return (
-                <button
-                  type="button"
+                <div
                   key={c.id}
-                  onClick={() =>
-                    setSelectedConversation({
-                      ...c,
-                      phoneNumber: safePhone(c),
-                    })
-                  }
-                  className={`w-full text-left p-4 border-b border-gray-50 hover:bg-gray-50 transition-colors relative ${
+                  className={`relative border-b border-gray-50 hover:bg-gray-50 transition-colors cursor-pointer group ${
                     isActive ? 'bg-blue-50 border-blue-200' : ''
                   }`}
+                  onClick={() => {
+                    if (!isEditing) {
+                      setSelectedConversation({
+                        ...c,
+                        phoneNumber: safePhone(c),
+                      });
+                    }
+                  }}
                 >
-                  <div className="flex items-start space-x-3">
-                    <div className="relative">
-                      <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
-                        {(c.contactName || 'U').charAt(0).toUpperCase()}
-                      </div>
-                      {c.unreadCount > 0 && (
-                        <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-semibold">
-                          {c.unreadCount}
+                  <div className="w-full text-left p-4">
+                    <div className="flex items-start space-x-3">
+                      <div className="relative">
+                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-purple-600 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                          {(c.contactName || 'U').charAt(0).toUpperCase()}
                         </div>
-                      )}
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-1">
-                        <h3 className="font-semibold text-gray-900 truncate">
-                          {c.contactName || 'Unknown Contact'}
-                        </h3>
-                        <span className="text-xs text-gray-500">
-                          {lastAt ? formatTime(lastAt) : ''}
-                        </span>
+                        {c.unreadCount > 0 && (
+                          <div className="absolute -top-1 -right-1 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center text-xs font-semibold">
+                            {c.unreadCount}
+                          </div>
+                        )}
                       </div>
-                      <p className="text-sm text-gray-600 truncate">
-                        {formatPhone(safePhone(c))}
-                      </p>
-                      <p className="text-sm text-gray-500 truncate mt-1">
-                        {c.lastMessage || 'No messages yet'}
-                      </p>
-                      {c.contactType && (
-                        <div className="mt-2">
-                          <span
-                            className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
-                              ${
-                                c.contactType === 'family'
-                                  ? 'bg-pink-100 text-pink-800'
-                                  : c.contactType === 'volunteer'
-                                  ? 'bg-blue-100 text-blue-800'
-                                  : 'bg-gray-100 text-gray-800'
-                              }`}
-                          >
-                            {c.contactType}
-                          </span>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between mb-1">
+                          {isEditing ? (
+                            <div className="flex items-center gap-2 flex-1">
+                              <input
+                                type="text"
+                                value={tempContactName}
+                                onChange={(e) => setTempContactName(e.target.value)}
+                                onKeyDown={(e) => {
+                                  if (e.key === 'Enter') {
+                                    saveContactName(c.id);
+                                  } else if (e.key === 'Escape') {
+                                    cancelEditing();
+                                  }
+                                }}
+                                className="flex-1 px-2 py-1 text-sm border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter contact name"
+                                autoFocus
+                                onClick={(e) => e.stopPropagation()}
+                              />
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  saveContactName(c.id);
+                                }}
+                                disabled={savingContact}
+                                className="p-1 text-green-600 hover:bg-green-100 rounded"
+                              >
+                                <Check className="h-4 w-4" />
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  cancelEditing();
+                                }}
+                                className="p-1 text-gray-600 hover:bg-gray-100 rounded"
+                              >
+                                <X className="h-4 w-4" />
+                              </button>
+                            </div>
+                          ) : (
+                            <>
+                              <h3 className="font-semibold text-gray-900 truncate">
+                                {c.contactName || 'Unknown Contact'}
+                              </h3>
+                              <div className="flex items-center gap-1">
+                                <span className="text-xs text-gray-500">
+                                  {lastAt ? formatTime(lastAt) : ''}
+                                </span>
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    startEditing(c);
+                                  }}
+                                  className="p-1 opacity-0 group-hover:opacity-100 hover:bg-gray-200 rounded transition-all"
+                                  title="Rename contact"
+                                >
+                                  <Edit3 className="h-3 w-3 text-gray-500" />
+                                </button>
+                              </div>
+                            </>
+                          )}
                         </div>
-                      )}
+                        {!isEditing && (
+                          <>
+                            <p className="text-sm text-gray-600 truncate">
+                              {formatPhone(safePhone(c))}
+                            </p>
+                            <p className="text-sm text-gray-500 truncate mt-1">
+                              {c.lastMessage || 'No messages yet'}
+                            </p>
+                            {c.contactType && (
+                              <div className="mt-2">
+                                <span
+                                  className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium
+                                    ${
+                                      c.contactType === 'family'
+                                        ? 'bg-pink-100 text-pink-800'
+                                        : c.contactType === 'volunteer'
+                                        ? 'bg-blue-100 text-blue-800'
+                                        : 'bg-gray-100 text-gray-800'
+                                    }`}
+                                >
+                                  {c.contactType}
+                                </span>
+                              </div>
+                            )}
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </button>
+                </div>
               );
             })
           )}
@@ -312,10 +420,19 @@ useEffect(() => {
                       .charAt(0)
                       .toUpperCase()}
                   </div>
-                  <div>
-                    <h2 className="font-semibold text-gray-900">
-                      {selectedConversation.contactName || 'Unknown Contact'}
-                    </h2>
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <h2 className="font-semibold text-gray-900">
+                        {selectedConversation.contactName || 'Unknown Contact'}
+                      </h2>
+                      <button
+                        onClick={() => startEditing(selectedConversation)}
+                        className="p-1 opacity-60 hover:opacity-100 hover:bg-gray-100 rounded transition-all"
+                        title="Rename contact"
+                      >
+                        <Edit3 className="h-4 w-4 text-gray-500" />
+                      </button>
+                    </div>
                     <p className="text-sm text-gray-500">
                       {formatPhone(safePhone(selectedConversation))}
                     </p>

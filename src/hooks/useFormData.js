@@ -5,6 +5,7 @@ import { saveRegistration, saveVolunteer, saveContact, saveDonation } from '../s
 import { debugFirebaseConfig } from '../config/firebase';
 import { doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebase';
+import { sendWelcomeSMSWithType } from '../utils/sms';
 
 // Import the Firebase receipt functions
 import { handleDonationWithFirebaseReceipt, createReceiptDownload } from '../utils/firebaseReceipts';
@@ -98,13 +99,36 @@ const useFormData = (initialState = {}) => {
       }
 
       let firebaseResult;
+      let smsSuccess;
       try {
         switch (formType) {
           case 'Family Registration':
             firebaseResult = await saveRegistration(formData);
+
+            // Send welcome SMS
+            smsSuccess = await sendWelcomeSMSWithType(
+              formData.phone, 
+              'family', 
+              formData.motherName
+            );
+
+            if (!smsSuccess) {
+              console.warn('Welcome SMS failed to send, but registration was successful');
+            }
             break;
           case 'Volunteer Application':
             firebaseResult = await saveVolunteer(formData);
+            // Send welcome SMS
+            smsSuccess = await sendWelcomeSMSWithType(
+              formData.phone, 
+              'volunteer', 
+              formData.name
+            );
+
+            if (!smsSuccess) {
+              console.warn('Welcome SMS failed to send, but registration was successful');
+            }
+
             break;
           case 'Contact Form':
             firebaseResult = await saveContact(formData);
@@ -122,6 +146,7 @@ const useFormData = (initialState = {}) => {
         return { success: false, error: firebaseResult.error };
       }
 
+    
       try {
         const emailResult = await sendFormEmail(formType, formData);
         if (emailResult.success) {
@@ -147,6 +172,8 @@ const useFormData = (initialState = {}) => {
     } finally {
       setIsSubmitting(false);
     }
+
+  
   };
 
   // UPDATED: This is where you use handleDonationWithFirebaseReceipt

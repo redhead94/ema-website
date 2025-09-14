@@ -77,8 +77,7 @@ const VolunteerPage = () => {
           <div className="space-y-2">
             {[
               { value: 'call', label: 'Phone Call' },
-              { value: 'text', label: 'Text Message' },
-              { value: 'whatsapp', label: 'WhatsApp' }
+              { value: 'text', label: 'Text Message' }
             ].map((option) => (
               <label key={option.value} className="flex items-center">
                 <input

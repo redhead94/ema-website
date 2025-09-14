@@ -86,7 +86,7 @@ async function saveSMSToFirebase({ phoneNumber, body, direction, twilioSid, to }
     };
 
     await addDoc(collection(db, 'sms_messages'), messageData);
-    await bumpUnread(from, body);
+    await bumpUnread(phoneNumber, body);
     console.log('Message saved to sms_messages collection');
 
     // Update or create conversation

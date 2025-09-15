@@ -57,8 +57,8 @@ export const saveVolunteer = async (formData) => {
       availableTimes: formData.availableTimes || [],
     });
 
-    if (phone) {
-      await ensureConversation(phone, {
+    if (normalizedPhone) {
+      await ensureConversation(normalizedPhone, {
         contactName: formData.volunteerName || formData.name,
         contactType: 'volunteer',
         volunteerId: docRef.id,

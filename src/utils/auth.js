@@ -55,3 +55,13 @@ export const verifyCode = async (phone, code) => {
     return false;
   }
 };
+
+// Client-side token helpers (no JWT dependency)
+export const generateSimpleToken = () => {
+  return Math.random().toString(36).substring(2) + Date.now().toString(36);
+};
+
+export const isTokenExpired = (tokenData) => {
+  if (!tokenData || !tokenData.expires) return true;
+  return Date.now() > tokenData.expires;
+};

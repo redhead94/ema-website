@@ -44,19 +44,52 @@ export const LoginForm = () => {
     }
   };
 
-  const verifyCode = async () => {
-    if (!code.trim()) {
-      setError('Please enter the verification code');
-      return;
-    }
+  const verifyCodeAndLogin = async () => {
+  if (!code.trim()) {
+    setError('Please enter the verification code');
+    return;
+  }
 
-    const result = await login(phone, code);
+  setLoading(true);
+  setError('');
+
+  try {
+    console.log('Sending verification request...');
     
-    if (!result.success) {
-      setError(result.error);
-    }
-  };
+    const response = await fetch('/api/auth/verify-code', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ phone, code })
+    });
 
+    console.log('Response status:', response.status);
+    const data = await response.json();
+    console.log('Response data:', data);
+    
+    if (data.success) {
+      localStorage.setItem('ema_token', data.token);
+      
+      // Redirect based on user type
+      if (data.user.type === 'volunteer') {
+        console.log('Redirecting to volunteer portal...');
+        window.location.href = '/portal/volunteer';
+      } else if (data.user.type === 'family') {
+        console.log('Redirecting to family portal...');
+        window.location.href = '/portal/family';
+      } else {
+        setError('Unknown user type received');
+      }
+    } else {
+      setError(data.error);
+    }
+  } catch (error) {
+    console.error('Verification error:', error);
+    setError('Network error. Please try again.');
+  } finally {
+    setLoading(false);
+  }
+};
+  
   const formatPhoneNumber = (value) => {
     const phoneNumber = value.replace(/[^\d]/g, '');
     const phoneNumberLength = phoneNumber.length;
@@ -179,7 +212,7 @@ export const LoginForm = () => {
 
             <div className="space-y-3">
               <button
-                onClick={verifyCode}
+                onClick={verifyCodeAndLogin}
                 disabled={loading || code.length !== 6}
                 className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-lg transition-all flex items-center justify-center gap-2"
               >

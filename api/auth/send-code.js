@@ -18,7 +18,7 @@ export default async function handler(req, res) {
     const code = generateVerificationCode();
     
     // Store the code
-    storeVerificationCode(normalizedPhone, code);
+    await storeVerificationCode(normalizedPhone, code);
     
     // Send SMS
     const smsResponse = await fetch(`${req.headers.origin || 'http://localhost:3000'}/api/send-sms`, {

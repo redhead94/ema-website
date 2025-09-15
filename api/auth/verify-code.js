@@ -39,7 +39,7 @@ export default async function handler(req, res) {
     const normalizedPhone = normalizePhone(phone);
     
     // Verify the code
-    if (!verifyCode(normalizedPhone, code)) {
+    if (!(await verifyCode(normalizedPhone, code))) {
       return res.status(400).json({ error: 'Invalid or expired verification code' });
     }
 

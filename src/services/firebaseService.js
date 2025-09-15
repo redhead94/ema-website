@@ -12,17 +12,21 @@ import { ensureConversation, normalizePhone } from '../utils/conversation';
 /* ----------------------- Save family registration ----------------------- */
 export const saveRegistration = async (formData) => {
   try {
+
+      const phone =
+      formData.motherPhone ||
+      formData.phone ||
+      formData.contactPhone ||
+      formData.primaryPhone;
+
+    const normalizedPhone = phone ? normalizePhone(phone) : null;
+
     const docRef = await addDoc(collection(db, 'registrations'), {
       ...formData,
+      phone: normalizedPhone,
       createdAt: serverTimestamp(),
       status: 'pending',
     });
-
-    const phone =
-      normalizePhone(formData.motherPhone) ||
-      normalizePhone(formData.phone) ||
-      normalizePhone(formData.contactPhone) ||
-      normalizePhone(formData.primaryPhone);
 
     if (phone) {
       await ensureConversation(phone, {
@@ -42,15 +46,17 @@ export const saveRegistration = async (formData) => {
 /* ----------------------- Save volunteer application --------------------- */
 export const saveVolunteer = async (formData) => {
   try {
+    const normalizedPhone = normalizePhone(formData.volunteerPhone) || normalizePhone(formData.phone);
+
     const docRef = await addDoc(collection(db, 'volunteers'), {
       ...formData,
+      phone: normalizedPhone,
       createdAt: serverTimestamp(),
       status: 'pending',
       availableDays: formData.availableDays || [],
       availableTimes: formData.availableTimes || [],
     });
 
-    const phone = normalizePhone(formData.volunteerPhone) || normalizePhone(formData.phone);
     if (phone) {
       await ensureConversation(phone, {
         contactName: formData.volunteerName || formData.name,

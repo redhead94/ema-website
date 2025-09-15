@@ -13,6 +13,16 @@ import ThankYouPage from './pages/ThankYouPage';
 import Login from './pages/Login';
 import useFormData from './hooks/useFormData';
 
+// Import new auth components
+import { AuthProvider } from './components/auth/AuthProvider';
+import { LoginForm } from './components/auth/LoginForm';
+import { ProtectedRoute as UserProtectedRoute } from './components/auth/ProtectedRoute';
+import { UserLayout } from './components/layouts/UserLayout';
+
+// Import new portal components (we'll create these next)
+import VolunteerPortal from './pages/VolunteerPortal';
+import FamilyPortal from './pages/FamilyPortal';
+
 // Component to handle Stripe redirect processing
 const StripeHandler = () => {
   const [searchParams] = useSearchParams();
@@ -48,12 +58,12 @@ const StripeHandler = () => {
   return <div>Processing...</div>;
 };
 
-// Protected route component for admin
-const ProtectedRoute = ({ children, isAuthenticated }) => {
+// Protected route component for admin (existing)
+const AdminProtectedRoute = ({ children, isAuthenticated }) => {
   return isAuthenticated ? children : <Navigate to="/login" replace />;
 };
 
-// Admin layout component
+// Admin layout component (existing)
 const AdminLayout = ({ children, onLogout, onBackToSite }) => {
   return (
     <div className="min-h-screen bg-gray-50">
@@ -91,13 +101,12 @@ const AdminLayout = ({ children, onLogout, onBackToSite }) => {
   );
 };
 
-
 // Main app content component
 const AppContent = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const navigate = useNavigate();
 
-  // Check authentication on mount
+  // Check admin authentication on mount
   useEffect(() => {
     const authenticated = localStorage.getItem('ema_admin_authenticated');
     const loginTime = localStorage.getItem('ema_admin_login_time');
@@ -107,23 +116,23 @@ const AppContent = () => {
       const hoursSinceLogin = (Date.now() - parseInt(loginTime)) / (1000 * 60 * 60);
       
       if (hoursSinceLogin < 24) {
-        setIsAuthenticated(true);
+        setIsAdminAuthenticated(true);
       } else {
         // Session expired
-        handleLogout();
+        handleAdminLogout();
       }
     }
   }, []);
 
-  // Handle successful login
-  const handleLoginSuccess = () => {
-    setIsAuthenticated(true);
+  // Handle successful admin login
+  const handleAdminLoginSuccess = () => {
+    setIsAdminAuthenticated(true);
     navigate('/admin');
   };
 
-  // Handle logout
-  const handleLogout = () => {
-    setIsAuthenticated(false);
+  // Handle admin logout
+  const handleAdminLogout = () => {
+    setIsAdminAuthenticated(false);
     localStorage.removeItem('ema_admin_authenticated');
     localStorage.removeItem('ema_admin_login_time');
     navigate('/');
@@ -141,7 +150,7 @@ const AppContent = () => {
         path="/*"
         element={
           <div className="min-h-screen bg-gray-50">
-            <Navigation isAuthenticated={isAuthenticated} onLogout={handleLogout} />
+            <Navigation isAuthenticated={isAdminAuthenticated} onLogout={handleAdminLogout} />
             <main className="pb-8">
               <Routes>
                 <Route path="/" element={<HomePage />} />
@@ -152,7 +161,10 @@ const AppContent = () => {
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/thank-you" element={<ThankYouPage />} />
                 <Route path="/stripe-handler" element={<StripeHandler />} />
-                <Route path="/login" element={<Login onLoginSuccess={handleLoginSuccess} />} />
+                <Route path="/login" element={<Login onLoginSuccess={handleAdminLoginSuccess} />} />
+                
+                {/* User portal login - separate from admin login */}
+                <Route path="/portal/login" element={<LoginForm />} />
               </Routes>
             </main>
             <Footer />
@@ -164,11 +176,35 @@ const AppContent = () => {
       <Route
         path="/admin"
         element={
-          <ProtectedRoute isAuthenticated={isAuthenticated}>
-            <AdminLayout onLogout={handleLogout} onBackToSite={handleBackToSite}>
+          <AdminProtectedRoute isAuthenticated={isAdminAuthenticated}>
+            <AdminLayout onLogout={handleAdminLogout} onBackToSite={handleBackToSite}>
               <AdminDashboard />
             </AdminLayout>
-          </ProtectedRoute>
+          </AdminProtectedRoute>
+        }
+      />
+
+      {/* Volunteer portal routes */}
+      <Route
+        path="/portal/volunteer/*"
+        element={
+          <UserProtectedRoute requiredType="volunteer">
+            <UserLayout title="Volunteer Portal">
+              <VolunteerPortal />
+            </UserLayout>
+          </UserProtectedRoute>
+        }
+      />
+
+      {/* Family portal routes */}
+      <Route
+        path="/portal/family/*"
+        element={
+          <UserProtectedRoute requiredType="family">
+            <UserLayout title="Family Portal">
+              <FamilyPortal />
+            </UserLayout>
+          </UserProtectedRoute>
         }
       />
     </Routes>
@@ -178,7 +214,9 @@ const AppContent = () => {
 const App = () => {
   return (
     <BrowserRouter>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </BrowserRouter>
   );
 };

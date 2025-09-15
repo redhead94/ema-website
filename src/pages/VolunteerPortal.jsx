@@ -1,424 +1,371 @@
-import React, { useState } from "react";
-import PropTypes from "prop-types";
-import { Lock, User, Eye, EyeOff, Phone, MessageCircle, ArrowRight, Check, AlertCircle } from "lucide-react";
+import React, { useState, useEffect } from 'react';
+import { 
+  Users, 
+  Clock, 
+  Calendar, 
+  Phone, 
+  Mail, 
+  MapPin,
+  Plus,
+  Save,
+  X
+} from 'lucide-react';
+import { useAuth } from '../components/auth/AuthProvider';
+import { 
+  collection, 
+  query, 
+  where, 
+  onSnapshot, 
+  addDoc, 
+  doc, 
+  serverTimestamp,
+  orderBy
+} from 'firebase/firestore';
+import { db } from '../config/firebase';
 
-export default function Login({ onLoginSuccess }) {
-  const [loginType, setLoginType] = useState('admin'); // 'admin' or 'portal'
-  const [credentials, setCredentials] = useState({ username: "", password: "" });
-  const [showPassword, setShowPassword] = useState(false);
-  const [error, setError] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
+const VolunteerPortal = () => {
+  const { user } = useAuth();
+  const [volunteerData, setVolunteerData] = useState(null);
+  const [assignedFamilies, setAssignedFamilies] = useState([]);
+  const [hourLogs, setHourLogs] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showHourLogger, setShowHourLogger] = useState(false);
 
-  // Portal login state
-  const [phone, setPhone] = useState('');
-  const [code, setCode] = useState('');
-  const [step, setStep] = useState('phone'); // 'phone' or 'code'
-  const [codeSent, setCodeSent] = useState(false);
+  // Hour logging form state
+  const [newHourLog, setNewHourLog] = useState({
+    familyId: '',
+    hours: '',
+    description: '',
+    date: new Date().toISOString().split('T')[0]
+  });
 
-  const validateAdmin = () => {
-    if (!credentials.username.trim()) return "Username is required";
-    if (!credentials.password) return "Password is required";
-    if (credentials.password.length < 6) return "Password must be at least 6 characters";
-    return "";
-  };
+  useEffect(() => {
+    if (!user?.profileId) return;
 
-  const handleAdminSubmit = (e) => {
-    e.preventDefault();
-    setError("");
-    const v = validateAdmin();
-    if (v) {
-      setError(v);
-      return;
-    }
-    setIsLoading(true);
-
-    setTimeout(() => {
-      const isDemoMatch =
-        credentials.username === "admin" && credentials.password === "ema@11420";
-
-      if (isDemoMatch) {
-        localStorage.setItem("ema_admin_authenticated", "true");
-        localStorage.setItem("ema_admin_login_time", String(Date.now()));
-        onLoginSuccess?.();
-      } else {
-        setError("Invalid username or password");
+    // Load volunteer data
+    const volunteerRef = doc(db, 'volunteers', user.profileId);
+    const unsubVolunteer = onSnapshot(volunteerRef, (doc) => {
+      if (doc.exists()) {
+        setVolunteerData({ id: doc.id, ...doc.data() });
       }
-      setIsLoading(false);
-    }, 500);
-  };
+      setLoading(false);
+    });
 
-  const sendCode = async () => {
-    if (!phone.trim()) {
-      setError('Please enter your phone number');
+    // Load hour logs
+    const hoursQuery = query(
+      collection(db, 'volunteer_hours'),
+      where('volunteerId', '==', user.profileId),
+      orderBy('date', 'desc')
+    );
+    const unsubHours = onSnapshot(hoursQuery, (snapshot) => {
+      const logs = [];
+      snapshot.forEach((doc) => {
+        logs.push({ id: doc.id, ...doc.data() });
+      });
+      setHourLogs(logs);
+    });
+
+    return () => {
+      unsubVolunteer();
+      unsubHours();
+    };
+  }, [user?.profileId]);
+
+  useEffect(() => {
+    if (!volunteerData?.familiesAssigned) return;
+    setAssignedFamilies(volunteerData.familiesAssigned || []);
+  }, [volunteerData]);
+
+  const logHours = async () => {
+    if (!newHourLog.familyId || !newHourLog.hours || !newHourLog.description) {
+      alert('Please fill in all fields');
       return;
     }
-
-    setIsLoading(true);
-    setError('');
 
     try {
-      const response = await fetch('/api/auth/send-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone })
+      await addDoc(collection(db, 'volunteer_hours'), {
+        volunteerId: user.profileId,
+        volunteerName: volunteerData.volunteerName,
+        familyId: newHourLog.familyId,
+        familyName: assignedFamilies.find(f => f.registrationId === newHourLog.familyId)?.motherName || '',
+        hours: parseFloat(newHourLog.hours),
+        description: newHourLog.description,
+        date: new Date(newHourLog.date),
+        createdAt: serverTimestamp(),
+        status: 'submitted'
       });
 
-      const data = await response.json();
-      
-      if (data.success) {
-        setStep('code');
-        setCodeSent(true);
-      } else {
-        setError(data.error || 'Failed to send verification code');
-      }
-    } catch (error) {
-      setError('Network error. Please try again.');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const verifyCodeAndLogin = async () => {
-    if (!code.trim()) {
-      setError('Please enter the verification code');
-      return;
-    }
-
-    setIsLoading(true);
-    setError('');
-
-    try {
-      const response = await fetch('/api/auth/verify-code', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ phone, code })
+      setNewHourLog({
+        familyId: '',
+        hours: '',
+        description: '',
+        date: new Date().toISOString().split('T')[0]
       });
-
-      const data = await response.json();
-      
-      if (data.success) {
-        localStorage.setItem('ema_token', data.token);
-        // Redirect based on user type
-        if (data.user.type === 'volunteer') {
-          window.location.href = '/portal/volunteer';
-        } else if (data.user.type === 'family') {
-          window.location.href = '/portal/family';
-        }
-      } else {
-        setError(data.error);
-      }
+      setShowHourLogger(false);
     } catch (error) {
-      setError('Network error. Please try again.');
-    } finally {
-      setIsLoading(false);
+      console.error('Error logging hours:', error);
+      alert('Failed to log hours. Please try again.');
     }
   };
 
-  const handleInputChange = (field, value) => {
-    setCredentials((prev) => ({ ...prev, [field]: value }));
-    if (error) setError("");
-  };
+  const totalHours = hourLogs.reduce((sum, log) => sum + (log.hours || 0), 0);
 
-  const formatPhoneNumber = (value) => {
-    const phoneNumber = value.replace(/[^\d]/g, '');
-    const phoneNumberLength = phoneNumber.length;
-    
-    if (phoneNumberLength < 4) return phoneNumber;
-    if (phoneNumberLength < 7) {
-      return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3)}`;
-    }
-    return `(${phoneNumber.slice(0, 3)}) ${phoneNumber.slice(3, 6)}-${phoneNumber.slice(6, 10)}`;
-  };
-
-  const handlePhoneChange = (e) => {
-    const formatted = formatPhoneNumber(e.target.value);
-    setPhone(formatted);
-    setError('');
-  };
-
-  const handleCodeChange = (e) => {
-    const value = e.target.value.replace(/[^\d]/g, '').slice(0, 6);
-    setCode(value);
-    setError('');
-  };
-
-  const handleKeyPress = (e, action) => {
-    if (e.key === 'Enter') {
-      action();
-    }
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading your dashboard...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-[70vh] flex items-start sm:items-center justify-center px-4 pt-8 pb-16 bg-white">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-6">
-          <div className="mx-auto h-12 w-12 bg-indigo-100 rounded-full flex items-center justify-center">
-            {loginType === 'admin' ? (
-              <Lock className="h-6 w-6 text-blue-600" aria-hidden="true" />
+    <div className="space-y-8">
+      {/* Welcome Header */}
+      <div className="bg-gradient-to-r from-blue-600 to-indigo-700 text-white rounded-xl p-8">
+        <h1 className="text-3xl font-bold mb-2">
+          Welcome, {volunteerData?.volunteerName || 'Volunteer'}!
+        </h1>
+        <p className="text-blue-100 text-lg">
+          Thank you for your service to the EMA community
+        </p>
+      </div>
+
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+              <Users className="w-6 h-6 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Families Assigned</p>
+              <p className="text-2xl font-bold text-gray-900">{assignedFamilies.length}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+              <Clock className="w-6 h-6 text-green-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Total Hours</p>
+              <p className="text-2xl font-bold text-gray-900">{totalHours}</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+              <Calendar className="w-6 h-6 text-purple-600" />
+            </div>
+            <div>
+              <p className="text-sm text-gray-600">Hours This Month</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {hourLogs
+                  .filter(log => {
+                    const logDate = new Date(log.date?.toDate?.() || log.date);
+                    const now = new Date();
+                    return logDate.getMonth() === now.getMonth() && logDate.getFullYear() === now.getFullYear();
+                  })
+                  .reduce((sum, log) => sum + (log.hours || 0), 0)}
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Assigned Families */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <h2 className="text-xl font-semibold text-gray-900">Your Assigned Families</h2>
+        </div>
+        <div className="p-6">
+          {assignedFamilies.length === 0 ? (
+            <div className="text-center py-8">
+              <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+              <p className="text-gray-500">No families assigned yet</p>
+              <p className="text-sm text-gray-400 mt-1">
+                Contact your EMA coordinator to get assigned to families
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {assignedFamilies.map((family) => (
+                <div key={family.registrationId} className="border border-gray-200 rounded-lg p-6">
+                  <h3 className="font-semibold text-gray-900 mb-4">{family.motherName}</h3>
+                  <div className="space-y-2 text-sm text-gray-600">
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4" />
+                      <span>{family.motherPhone || 'No phone'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4" />
+                      <span>{family.motherEmail || 'No email'}</span>
+                    </div>
+                    {family.address && (
+                      <div className="flex items-start gap-2">
+                        <MapPin className="w-4 h-4 mt-0.5" />
+                        <span>{family.address}</span>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Hour Logging */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200">
+        <div className="p-6 border-b border-gray-200">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-gray-900">Hour Tracking</h2>
+            <button
+              onClick={() => setShowHourLogger(!showHourLogger)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+            >
+              <Plus className="w-4 h-4" />
+              Log Hours
+            </button>
+          </div>
+        </div>
+
+        <div className="p-6">
+          {/* Hour Logger Form */}
+          {showHourLogger && (
+            <div className="bg-gray-50 rounded-lg p-6 mb-6">
+              <h3 className="font-semibold text-gray-900 mb-4">Log Your Hours</h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Family
+                  </label>
+                  <select
+                    value={newHourLog.familyId}
+                    onChange={(e) => setNewHourLog({...newHourLog, familyId: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  >
+                    <option value="">Select a family</option>
+                    {assignedFamilies.map((family) => (
+                      <option key={family.registrationId} value={family.registrationId}>
+                        {family.motherName}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Hours
+                  </label>
+                  <input
+                    type="number"
+                    step="0.5"
+                    min="0"
+                    value={newHourLog.hours}
+                    onChange={(e) => setNewHourLog({...newHourLog, hours: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="2.5"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Date
+                  </label>
+                  <input
+                    type="date"
+                    value={newHourLog.date}
+                    onChange={(e) => setNewHourLog({...newHourLog, date: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div className="md:col-span-1">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Description
+                  </label>
+                  <textarea
+                    value={newHourLog.description}
+                    onChange={(e) => setNewHourLog({...newHourLog, description: e.target.value})}
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    rows="3"
+                    placeholder="What did you help with?"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3 mt-4">
+                <button
+                  onClick={logHours}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  Save Hours
+                </button>
+                <button
+                  onClick={() => setShowHourLogger(false)}
+                  className="flex items-center gap-2 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                  Cancel
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Hour Log History */}
+          <div>
+            <h3 className="font-semibold text-gray-900 mb-4">Recent Hour Logs</h3>
+            {hourLogs.length === 0 ? (
+              <div className="text-center py-8">
+                <Clock className="w-12 h-12 text-gray-300 mx-auto mb-4" />
+                <p className="text-gray-500">No hours logged yet</p>
+                <p className="text-sm text-gray-400 mt-1">
+                  Start tracking your volunteer hours above
+                </p>
+              </div>
             ) : (
-              <MessageCircle className="h-6 w-6 text-blue-600" aria-hidden="true" />
+              <div className="space-y-4">
+                {hourLogs.slice(0, 10).map((log) => (
+                  <div key={log.id} className="border border-gray-200 rounded-lg p-4">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-4 mb-2">
+                          <h4 className="font-medium text-gray-900">{log.familyName}</h4>
+                          <span className="text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded">
+                            {log.hours} hours
+                          </span>
+                          <span className={`text-xs px-2 py-1 rounded ${
+                            log.status === 'approved' ? 'bg-green-100 text-green-800' :
+                            log.status === 'submitted' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-gray-100 text-gray-800'
+                          }`}>
+                            {log.status}
+                          </span>
+                        </div>
+                        <p className="text-sm text-gray-600 mb-2">{log.description}</p>
+                        <p className="text-xs text-gray-500">
+                          {new Date(log.date?.toDate?.() || log.date).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
             )}
           </div>
-          <h1 className="mt-3 text-2xl font-bold text-gray-900">
-            {loginType === 'admin' ? 'Admin Login' : 'Portal Access'}
-          </h1>
-          <p className="text-sm text-gray-600 mt-2">
-            {loginType === 'admin' 
-              ? 'Sign in to the admin dashboard' 
-              : step === 'phone'
-                ? 'Enter your phone number to access your portal'
-                : 'Enter the verification code sent to your phone'
-            }
-          </p>
-        </div>
-
-        {/* Login Type Toggle */}
-        <div className="flex bg-gray-100 rounded-lg p-1 mb-6">
-          <button
-            onClick={() => {
-              setLoginType('admin');
-              setError('');
-              setStep('phone');
-              setCodeSent(false);
-            }}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-              loginType === 'admin'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Admin Login
-          </button>
-          <button
-            onClick={() => {
-              setLoginType('portal');
-              setError('');
-              setCredentials({ username: '', password: '' });
-            }}
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-all ${
-              loginType === 'portal'
-                ? 'bg-white text-gray-900 shadow-sm'
-                : 'text-gray-600 hover:text-gray-900'
-            }`}
-          >
-            Volunteer/Family Portal
-          </button>
-        </div>
-
-        {/* Error Message */}
-        {error && (
-          <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center gap-3">
-            <AlertCircle className="w-5 h-5 text-red-500 flex-shrink-0" />
-            <p className="text-sm text-red-700">{error}</p>
-          </div>
-        )}
-
-        {/* Success Message for Portal */}
-        {loginType === 'portal' && codeSent && step === 'code' && (
-          <div className="mb-4 p-4 bg-green-50 border border-green-200 rounded-lg flex items-center gap-3">
-            <Check className="w-5 h-5 text-green-500 flex-shrink-0" />
-            <p className="text-sm text-green-700">
-              Verification code sent to {phone}
-            </p>
-          </div>
-        )}
-
-        {/* Card */}
-        <div className="bg-white shadow-md rounded-lg p-6 border border-gray-100">
-          
-          {/* Admin Login */}
-          {loginType === 'admin' && (
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                  Username
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="username"
-                    name="username"
-                    type="text"
-                    autoComplete="username"
-                    required
-                    value={credentials.username}
-                    onChange={(e) => handleInputChange("username", e.target.value)}
-                    onKeyPress={(e) => handleKeyPress(e, handleAdminSubmit)}
-                    className="appearance-none relative block w-full px-3 py-2 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter username"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                  Password
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Lock className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                  </div>
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? "text" : "password"}
-                    autoComplete="current-password"
-                    required
-                    value={credentials.password}
-                    onChange={(e) => handleInputChange("password", e.target.value)}
-                    onKeyPress={(e) => handleKeyPress(e, handleAdminSubmit)}
-                    className="appearance-none relative block w-full px-3 py-2 pl-10 pr-10 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                    placeholder="Enter password"
-                  />
-                  <button
-                    type="button"
-                    className="absolute inset-y-0 right-0 pr-3 flex items-center focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 rounded"
-                    onClick={() => setShowPassword((s) => !s)}
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                    ) : (
-                      <Eye className="h-5 w-5 text-gray-400" aria-hidden="true" />
-                    )}
-                  </button>
-                </div>
-              </div>
-
-              <button
-                onClick={handleAdminSubmit}
-                disabled={isLoading}
-                className="relative w-full flex justify-center py-2.5 px-4 text-sm font-semibold rounded-md text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                {isLoading ? (
-                  <span className="inline-flex items-center gap-2">
-                    <span className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent" />
-                    Signing in…
-                  </span>
-                ) : (
-                  "Sign In to Admin"
-                )}
-              </button>
-            </div>
-          )}
-
-          {/* Portal Login */}
-          {loginType === 'portal' && (
-            <div className="space-y-6">
-              {/* Phone Number Step */}
-              {step === 'phone' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Phone Number
-                    </label>
-                    <div className="relative">
-                      <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
-                      <input
-                        type="tel"
-                        value={phone}
-                        onChange={handlePhoneChange}
-                        onKeyPress={(e) => handleKeyPress(e, sendCode)}
-                        placeholder="(555) 123-4567"
-                        className="w-full pl-12 pr-4 py-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
-                        maxLength={14}
-                      />
-                    </div>
-                    <p className="text-xs text-gray-500 mt-2">
-                      Use the phone number you registered with EMA
-                    </p>
-                  </div>
-
-                  <button
-                    onClick={sendCode}
-                    disabled={isLoading || !phone.trim()}
-                    className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-md transition-all flex items-center justify-center gap-2"
-                  >
-                    {isLoading ? (
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    ) : (
-                      <>
-                        Send Code
-                        <ArrowRight className="w-4 h-4" />
-                      </>
-                    )}
-                  </button>
-                </>
-              )}
-
-              {/* Verification Code Step */}
-              {step === 'code' && (
-                <>
-                  <div>
-                    <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Verification Code
-                    </label>
-                    <input
-                      type="text"
-                      value={code}
-                      onChange={handleCodeChange}
-                      onKeyPress={(e) => handleKeyPress(e, verifyCodeAndLogin)}
-                      placeholder="123456"
-                      className="w-full text-center text-2xl font-mono py-3 px-4 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all tracking-widest"
-                      maxLength={6}
-                      autoFocus
-                    />
-                    <p className="text-xs text-gray-500 mt-2">
-                      Enter the 6-digit code sent to {phone}
-                    </p>
-                  </div>
-
-                  <div className="space-y-3">
-                    <button
-                      onClick={verifyCodeAndLogin}
-                      disabled={isLoading || code.length !== 6}
-                      className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-semibold py-3 px-4 rounded-md transition-all flex items-center justify-center gap-2"
-                    >
-                      {isLoading ? (
-                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                      ) : (
-                        <>
-                          Verify & Access Portal
-                          <Check className="w-4 h-4" />
-                        </>
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        setStep('phone');
-                        setCode('');
-                        setError('');
-                        setCodeSent(false);
-                      }}
-                      className="w-full text-gray-600 hover:text-gray-800 py-2 text-sm transition-colors"
-                    >
-                      Use different phone number
-                    </button>
-                  </div>
-                </>
-              )}
-            </div>
-          )}
-        </div>
-
-        {/* Footer */}
-        <div className="mt-6 text-center">
-          <p className="text-xs text-gray-500">
-            {loginType === 'admin' 
-              ? 'Need access? Contact the system administrator'
-              : 'Need help? Contact EMA support'
-            }
-          </p>
         </div>
       </div>
     </div>
   );
-}
-
-Login.propTypes = {
-  onLoginSuccess: PropTypes.func,
 };
+
+export default VolunteerPortal;

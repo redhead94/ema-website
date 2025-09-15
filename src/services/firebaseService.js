@@ -6,7 +6,8 @@ import {
   getDocs,
 } from 'firebase/firestore';
 import { db } from '../config/firebase';
-import { ensureConversation } from '../utils/conversation';
+import { ensureConversation, normalizePhone } from '../utils/conversation';
+
 
 /* ----------------------- Save family registration ----------------------- */
 export const saveRegistration = async (formData) => {
@@ -18,10 +19,10 @@ export const saveRegistration = async (formData) => {
     });
 
     const phone =
-      formData.motherPhone ||
-      formData.phone ||
-      formData.contactPhone ||
-      formData.primaryPhone;
+      normalizePhone(formData.motherPhone) ||
+      normalizePhone(formData.phone) ||
+      normalizePhone(formData.contactPhone) ||
+      normalizePhone(formData.primaryPhone);
 
     if (phone) {
       await ensureConversation(phone, {
@@ -49,7 +50,7 @@ export const saveVolunteer = async (formData) => {
       availableTimes: formData.availableTimes || [],
     });
 
-    const phone = formData.volunteerPhone || formData.phone;
+    const phone = normalizePhone(formData.volunteerPhone) || normalizePhone(formData.phone);
     if (phone) {
       await ensureConversation(phone, {
         contactName: formData.volunteerName || formData.name,

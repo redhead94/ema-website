@@ -36,6 +36,27 @@ const Footer = () => (
         </ul>
       </div>
       <div>
+        <p className="font-semibold mb-2">Regulatory</p>
+        <ul className="space-y-2 text-slate-600">
+          <li>
+            <Link 
+              to="/privacy-policy" 
+              className="hover:text-indigo-700 cursor-pointer transition-colors"
+            >
+              Privacy Policy
+            </Link>
+          </li>
+          <li>
+            <Link 
+              to="/terms-of-service" 
+              className="hover:text-indigo-700 cursor-pointer transition-colors"
+            >
+              Terms Of Service
+            </Link>
+          </li>
+        </ul>
+      </div>
+      <div>
         <p className="font-semibold mb-2">Contact</p>
         <ul className="space-y-2 text-slate-600">
           <li className="flex items-center gap-2">

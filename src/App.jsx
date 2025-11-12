@@ -11,6 +11,8 @@ import AboutPage from './pages/AboutPage';
 import AdminDashboard from './pages/AdminDashboard';
 import ThankYouPage from './pages/ThankYouPage';
 import Login from './pages/Login';
+import TermsOfServicePage from './pages/TermsOfServicePage';
+import PrivacyPolicyPage from './pages/PrivacyPolicyPage';
 import useFormData from './hooks/useFormData';
 
 // Auth + user portal
@@ -157,7 +159,9 @@ const AppContent = () => {
                 <Route path="/register" element={<RegisterPage />} />
                 <Route path="/volunteer" element={<VolunteerPage />} />
                 <Route path="/donate" element={<DonatePage />} />
-                <Route path="/contact" element={<ContactPage />} />
+                <Route path="/contact" element={<ContactPage />} />c
+                <Route path="/terms-of-service" element={<TermsOfServicePage />} />
+                <Route path="/privacy-policy" element={<PrivacyPolicyPage />} />
                 <Route path="/about" element={<AboutPage />} />
                 <Route path="/thank-you" element={<ThankYouPage />} />
                 <Route path="/stripe-handler" element={<StripeHandler />} />

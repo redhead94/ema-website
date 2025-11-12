@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback  } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
@@ -13,13 +13,13 @@ import ThankYouPage from './pages/ThankYouPage';
 import Login from './pages/Login';
 import useFormData from './hooks/useFormData';
 
-// Import new auth components
+// Auth + user portal
 import { AuthProvider } from './components/auth/AuthProvider';
 import { LoginForm } from './components/auth/LoginForm';
 import { ProtectedRoute as UserProtectedRoute } from './components/auth/ProtectedRoute';
 import { UserLayout } from './components/layouts/UserLayout';
 
-// Import new portal components (we'll create these next)
+// Portals
 import VolunteerPortal from './pages/VolunteerPortal';
 import FamilyPortal from './pages/FamilyPortal';
 
@@ -32,13 +32,15 @@ const StripeHandler = () => {
   useEffect(() => {
     const status = searchParams.get('status');
     const sessionId = searchParams.get('session_id');
-    
+
     if (status === 'success' && sessionId) {
       const processDonation = async () => {
         try {
-          const response = await fetch(`/api/get-checkout-session?session_id=${encodeURIComponent(sessionId)}`);
+          const response = await fetch(
+            `/api/get-checkout-session?session_id=${encodeURIComponent(sessionId)}`
+          );
           const sessionData = await response.json();
-          
+
           if (response.ok && (sessionData?.status === 'paid' || sessionData?.payment_status === 'paid')) {
             await handleStripeDonationResult(sessionData);
             navigate('/thank-you');
@@ -48,7 +50,7 @@ const StripeHandler = () => {
           navigate('/');
         }
       };
-      
+
       processDonation();
     } else {
       navigate('/');
@@ -106,15 +108,32 @@ const AppContent = () => {
   const [isAdminAuthenticated, setIsAdminAuthenticated] = useState(false);
   const navigate = useNavigate();
 
+  // Stable handlers
+  const handleAdminLogout = useCallback(() => {
+    setIsAdminAuthenticated(false);
+    localStorage.removeItem('ema_admin_authenticated');
+    localStorage.removeItem('ema_admin_login_time');
+    navigate('/');
+  }, [navigate]);
+
+  const handleAdminLoginSuccess = useCallback(() => {
+    setIsAdminAuthenticated(true);
+    navigate('/admin');
+  }, [navigate]);
+
+  const handleBackToSite = useCallback(() => {
+    navigate('/');
+  }, [navigate]);
+
   // Check admin authentication on mount
   useEffect(() => {
     const authenticated = localStorage.getItem('ema_admin_authenticated');
     const loginTime = localStorage.getItem('ema_admin_login_time');
-    
+
     if (authenticated === 'true' && loginTime) {
       // Check if login is still valid (24 hours)
-      const hoursSinceLogin = (Date.now() - parseInt(loginTime)) / (1000 * 60 * 60);
-      
+      const hoursSinceLogin = (Date.now() - parseInt(loginTime, 10)) / (1000 * 60 * 60);
+
       if (hoursSinceLogin < 24) {
         setIsAdminAuthenticated(true);
       } else {
@@ -122,28 +141,7 @@ const AppContent = () => {
         handleAdminLogout();
       }
     }
-  }, []);
-
-  
-  // Handle admin logout
-    const handleAdminLogout = useCallback(() => {
-    setIsAdminAuthenticated(false);
-    localStorage.removeItem('ema_admin_authenticated');
-    localStorage.removeItem('ema_admin_login_time');
-    navigate('/');
-  }, [navigate]);
-
-  // Handle successful admin login
-  const handleAdminLoginSuccess = () => {
-    setIsAdminAuthenticated(true);
-    navigate('/admin');
-  };
-
-
-  // Handle back to site from admin
-  const handleBackToSite = () => {
-    navigate('/');
-  };
+  }, [handleAdminLogout]);
 
   return (
     <Routes>
@@ -164,7 +162,7 @@ const AppContent = () => {
                 <Route path="/thank-you" element={<ThankYouPage />} />
                 <Route path="/stripe-handler" element={<StripeHandler />} />
                 <Route path="/login" element={<Login onLoginSuccess={handleAdminLoginSuccess} />} />
-                
+
                 {/* User portal login - separate from admin login */}
                 <Route path="/portal/login" element={<LoginForm />} />
               </Routes>

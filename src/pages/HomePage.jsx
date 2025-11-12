@@ -36,6 +36,8 @@ export default function HomePage({ setActiveTab }) {
     { label: "Active volunteers", value: "380+" },
   ];
 
+  const navigate = useNavigate();
+
   const testimonials = [
     {
       quote:

@@ -1,6 +1,5 @@
 import React, { useEffect, useState } from 'react';
 import { CheckCircle, Heart, Download, ArrowLeft } from 'lucide-react';
-import useFormData from '../hooks/useFormData';
 
 const ThankYouPage = ({ setActiveTab }) => {
   const [donationDetails, setDonationDetails] = useState(null);

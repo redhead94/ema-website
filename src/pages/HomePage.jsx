@@ -29,29 +29,7 @@ export default function HomePage({ setActiveTab }) {
     },
   ];
 
-  const stats = [
-    { label: "Meals delivered", value: "12,480+" },
-    { label: "Babysitting hours", value: "5,200+" },
-    { label: "Families supported", value: "1,100+" },
-    { label: "Active volunteers", value: "380+" },
-  ];
-
   const navigate = useNavigate();
-
-  const testimonials = [
-    {
-      quote:
-        "EMA showed up when we needed it most. A warm meal and a few hours of rest changed our entire week.",
-      name: "Leah & Ben",
-      role: "New parents, Silver Spring",
-    },
-    {
-      quote:
-        "Volunteering with EMA is simple and meaningful. I can pick up a shift after work and know it matters.",
-      name: "Rachel M.",
-      role: "Volunteer",
-    },
-  ];
 
   return (
     <div className="relative isolate bg-white text-slate-900">

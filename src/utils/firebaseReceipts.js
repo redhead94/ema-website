@@ -71,7 +71,7 @@ export const sendDonationEmailWithFirebaseReceipt = async (donationData, receipt
     console.log('Sending donation confirmation email...');
     
     // Send confirmation email to donor
-    const donorEmailResult = await emailjs.send(
+    await emailjs.send(
       EMAILJS_CONFIG.SERVICE_ID,
       EMAILJS_CONFIG.TEMPLATE_DONATION,
       {

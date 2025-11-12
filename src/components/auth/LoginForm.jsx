@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Phone, MessageCircle, ArrowRight, Check, AlertCircle } from 'lucide-react';
-import { useAuth } from './AuthProvider';
 
 // Login Form Component
 export const LoginForm = () => {
@@ -10,8 +9,6 @@ export const LoginForm = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [codeSent, setCodeSent] = useState(false);
-  
-  const { login } = useAuth();
 
   const sendCode = async () => {
     if (!phone.trim()) {

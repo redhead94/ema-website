@@ -3,7 +3,6 @@ import {
   doc,
   getDoc,
   writeBatch,
-  setDoc,
   serverTimestamp,
   arrayUnion,
   arrayRemove,
@@ -109,7 +108,7 @@ export async function unmatchVolunteerFromFamily(volunteerId, registrationId) {
   const v = vSnap.data();
   const r = rSnap.data();
 
-  const vName = v.volunteerName || v.name || 'Volunteer';
+  // const vName = v.volunteerName || v.name || 'Volunteer';
   const rName = r.motherName || r.name || 'Family';
 
   const vPhone = normalizePhone(v.volunteerPhone || v.phone || '');

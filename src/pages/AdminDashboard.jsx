@@ -1,5 +1,5 @@
 import React, { useMemo, useState } from 'react';
-import { Menu, X, Heart, Users, Mail, DollarSign, MessageCircle, Home, Settings, LogOut, TrendingUp } from 'lucide-react';
+import { Menu, X, Heart, Users, Mail, DollarSign, MessageCircle, Home, LogOut } from 'lucide-react';
 import SMSDashboard from '../components/SMSDashboard';
 import { useAdminData, formatDate } from '../hooks/useAdminData';
 import VolunteerCard from '../components/admin/VolunteerCard';

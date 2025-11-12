@@ -2,14 +2,14 @@ import React, { useState, useMemo } from 'react';
 import { CreditCard } from 'lucide-react';
 import useFormData from '../hooks/useFormData';
 
-function formatMoney(cents, currency = 'usd') {
-  const amount = (Number(cents || 0) / 100);
-  try {
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(amount);
-  } catch {
-    return `$${amount.toFixed(2)}`;
-  }
-}
+// function formatMoney(cents, currency = 'usd') {
+//   const amount = (Number(cents || 0) / 100);
+//   try {
+//     return new Intl.NumberFormat('en-US', { style: 'currency', currency: currency.toUpperCase() }).format(amount);
+//   } catch {
+//     return `$${amount.toFixed(2)}`;
+//   }
+// }
 
 const DonatePage = () => {
   const { formData, handleInputChange } = useFormData();

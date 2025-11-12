@@ -1,6 +1,7 @@
 import React from "react";
 import PropTypes from "prop-types";
 import { Baby, Users, Utensils, HeartHandshake, Mail } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 /**
  * EMA – Meals & Babysitting (No Forms)
@@ -73,13 +74,13 @@ export default function HomePage({ setActiveTab }) {
             </p>
             <div className="mt-6 sm:mt-8 flex flex-col sm:flex-row gap-3 sm:gap-4 justify-center">
               <button
-                onClick={() => setActiveTab("donate")}
+                onClick={() => navigate("/donate")}
                 className="inline-flex items-center justify-center rounded-full bg-indigo-600 px-7 sm:px-8 py-3 text-base sm:text-lg font-semibold text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-200 transition"
               >
                 Donate
               </button>
               <button
-                onClick={() => setActiveTab("contact")}
+                onClick={() => navigate("/contact")}
                 className="inline-flex items-center justify-center rounded-full bg-white px-7 sm:px-8 py-3 text-base sm:text-lg font-semibold text-slate-900 border border-slate-300 hover:bg-slate-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-indigo-100 transition"
               >
                 Contact
@@ -118,13 +119,13 @@ export default function HomePage({ setActiveTab }) {
             </div>
             <div className="flex gap-3">
               <button
-                onClick={() => setActiveTab("donate")}
+                onClick={() => navigate("/donate")}
                 className="rounded-full bg-white px-6 py-3 font-semibold text-indigo-900 shadow hover:bg-indigo-50 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/40"
               >
                 Donate
               </button>
               <button
-                onClick={() => setActiveTab("contact")}
+                onClick={() => navigate("/contact")}
                 className="rounded-full border border-white/70 px-6 py-3 font-semibold text-white hover:bg-white/10 focus:outline-none focus-visible:ring-4 focus-visible:ring-white/30"
               >
                 Contact

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback  } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useNavigate, useSearchParams } from 'react-router-dom';
 import Navigation from './components/Navigation';
 import Footer from './components/Footer';
@@ -124,19 +124,21 @@ const AppContent = () => {
     }
   }, []);
 
+  
+  // Handle admin logout
+    const handleAdminLogout = useCallback(() => {
+    setIsAdminAuthenticated(false);
+    localStorage.removeItem('ema_admin_authenticated');
+    localStorage.removeItem('ema_admin_login_time');
+    navigate('/');
+  }, [navigate]);
+
   // Handle successful admin login
   const handleAdminLoginSuccess = () => {
     setIsAdminAuthenticated(true);
     navigate('/admin');
   };
 
-  // Handle admin logout
-  const handleAdminLogout = () => {
-    setIsAdminAuthenticated(false);
-    localStorage.removeItem('ema_admin_authenticated');
-    localStorage.removeItem('ema_admin_login_time');
-    navigate('/');
-  };
 
   // Handle back to site from admin
   const handleBackToSite = () => {

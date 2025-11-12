@@ -1,5 +1,4 @@
 import React, { useState, useContext, createContext } from 'react';
-import { Phone, MessageCircle, ArrowRight, Check, AlertCircle } from 'lucide-react';
 
 // Auth Context
 const AuthContext = createContext();

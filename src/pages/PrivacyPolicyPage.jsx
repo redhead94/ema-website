@@ -76,8 +76,8 @@ export default function PrivacyPolicy() {
       content: (
         <p>
           You may request access, correction, or deletion of your personal information by
-          contacting us at <a className="underline" href="mailto:info@essentialmomassistance.org">
-          info@essentialmomassistance.org</a>.
+          contacting us at <a className="underline" href="mailto:info@essentialmom.net">
+          info@essentialmom.net</a>.
         </p>
       ),
     },
@@ -87,8 +87,8 @@ export default function PrivacyPolicy() {
       content: (
         <p>
           Questions about this policy? Email{" "}
-          <a className="underline" href="mailto:info@essentialmomassistance.org">
-            info@essentialmomassistance.org
+          <a className="underline" href="mailto:info@essentialmom.net">
+            info@essentialmom.net
           </a>.
         </p>
       ),

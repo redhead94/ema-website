@@ -75,8 +75,8 @@ export default function TermsOfService() {
       body: (
         <p>
           Questions about these terms? Email{" "}
-          <a className="underline" href="mailto:info@essentialmomassistance.org">
-            info@essentialmomassistance.org
+          <a className="underline" href="mailto:info@essentialmom.net">
+            info@essentialmom.net
           </a>.
         </p>
       ),
